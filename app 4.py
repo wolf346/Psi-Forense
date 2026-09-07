@@ -504,8 +504,8 @@ else:
             st.write("Por favor, complete sus datos filiatorios antes de acceder a las escalas:")
             
             with st.form("form_datos_personales"):
-                nombre_comp = st.text_input("Nombre y Apellido completo:")
-                dni_val = st.text_input("Número de DNI / Documento:")
+                nombre_comp = st.text_input("Nombre y Apellido completo:", autocomplete="off")
+                dni_val = st.text_input("Número de DNI / Documento:", autocomplete="off")
                 
                 guardar_datos = st.form_submit_button("Generar Hash y Acceder a las Escalas", use_container_width=True)
                 
