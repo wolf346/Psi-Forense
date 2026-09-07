@@ -476,7 +476,7 @@ else:
         st.subheader("🔑 Acceso a Evaluación")
         st.write("Por favor, ingrese el **código de acceso** o utilice el enlace directo que le envió el profesional:")
         
-        clave_ingresada = st.text_input("Código asignado:", key="input_codigo_evaluado_unico", placeholder="Ej: EVAL-SS4BJQ")
+       clave_ingresada = st.text_input("Código asignado:", key="input_codigo_evaluado_unico", placeholder="Ej: EVAL-SS4BJQ", autocomplete="off")
         
         if st.button("Ingresar", use_container_width=True):
             clave_limpia = clave_ingresada.strip().upper()
@@ -497,9 +497,10 @@ else:
             with col_info:
                 st.subheader("Datos del Evaluado y Registro de Identidad")
             with col_salir:
-                if st.button("🔴 Salir", use_container_width=True):
-                    del st.session_state["token_activo"]
-                    st.rerun()
+               if st.button("🔴 Salir", use_container_width=True):
+    del st.session_state["token_activo"]
+    st.query_params.clear()
+    st.rerun()
             st.write("Por favor, complete sus datos filiatorios antes de acceder a las escalas:")
             
             with st.form("form_datos_personales"):
