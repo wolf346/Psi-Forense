@@ -27,15 +27,68 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURACIÓN Y ALMACÉN GLOBAL COMPARTIDO
+# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE PERSISTENTE
 # -----------------------------------------------------------------------------
 CONTRASEÑA_MAESTRA = "MiClavePericial2026"
+DB_NAME = "forense.db"
 
-@st.cache_resource
-def obtener_base_claves_global():
-    return {}
+def init_db():
+    conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS evaluaciones_periciales (
+            token TEXT PRIMARY KEY,
+            estado TEXT,
+            datos_persona TEXT,
+            evaluaciones TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-claves_globales = obtener_base_claves_global()
+init_db()
+
+def cargar_datos_db():
+    conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("SELECT token, estado, datos_persona, evaluaciones FROM evaluaciones_periciales")
+    rows = cursor.fetchall()
+    conn.close()
+    
+    data = {}
+    for row in rows:
+        token, estado, dp, evals = row
+        data[token] = {
+            "estado": estado,
+            "datos_persona": json.loads(dp) if dp else None,
+            "evaluaciones": json.loads(evals) if evals else {}
+        }
+    return data
+
+def guardar_token_db(token, info_dict):
+    conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR REPLACE INTO evaluaciones_periciales (token, estado, datos_persona, evaluaciones)
+        VALUES (?, ?, ?, ?)
+    ''', (
+        token,
+        info_dict.get("estado", "activa"),
+        json.dumps(info_dict.get("datos_persona")),
+        json.dumps(info_dict.get("evaluaciones", {}))
+    ))
+    conn.commit()
+    conn.close()
+
+def eliminar_token_db(token):
+    conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM evaluaciones_periciales WHERE token = ?", (token,))
+    conn.commit()
+    conn.close()
+
+# Cargamos el diccionario global desde SQLite en cada ejecución
+claves_globales = cargar_datos_db()
 
 if "perito_autenticado" not in st.session_state:
     st.session_state["perito_autenticado"] = False
@@ -341,6 +394,7 @@ if token_url and "token_activo" not in st.session_state:
     token_limpio = token_url.strip().upper()
     if token_limpio in claves_globales:
         st.session_state["token_activo"] = token_limpio
+        st.query_params.clear()
 
 # -----------------------------------------------------------------------------
 # 3. BARRA LATERAL RESTRICTORA (ACCESO PRIVADO AL PERITO)
@@ -376,14 +430,16 @@ if st.session_state["perito_autenticado"]:
     
     if st.button("🎲 Generar Nueva Clave y Link", type="primary"):
         nueva_clave = generar_token_unico()
-        claves_globales[nueva_clave] = {
+        info_nueva = {
             "estado": "activa",
             "datos_persona": None,
             "evaluaciones": {}
         }
+        guardar_token_db(nueva_clave, info_nueva)
+        claves_globales = cargar_datos_db()
+        
         st.success(f"¡Clave generada con éxito!: **`{nueva_clave}`**")
         
-        # Obtener URL base actual de la app
         base_url = "https://psi-forense-hwgpyudkkkwqfwsjx2kkge.streamlit.app"
         link_completo = f"{base_url}/?token={nueva_clave}"
         
@@ -394,6 +450,9 @@ if st.session_state["perito_autenticado"]:
     st.divider()
     
     st.subheader("📋 Estado de Claves y Evaluaciones")
+    # Refrescamos desde la base de datos para ver los datos más recientes en tiempo real
+    claves_globales = cargar_datos_db()
+    
     if claves_globales:
         for clave in list(claves_globales.keys()):
             info = claves_globales[clave]
@@ -401,9 +460,11 @@ if st.session_state["perito_autenticado"]:
             evals = info.get("evaluaciones", {})
             col_texto, col_borrar = st.columns([5, 1])
             with col_texto:
-                if not evals:
-                    info_persona = f" (Iniciado por: {persona['nombre']} - DNI {persona['dni']})" if persona else " (Pendiente de ingreso)"
-                    st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** Disponible / Activa{info_persona}")
+                if not evals and not persona:
+                    st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** Disponible / Activa (Pendiente de ingreso)")
+                elif not evals:
+                    info_persona = f" (Iniciado por: {persona['nombre']} - DNI {persona['dni']})" if persona else ""
+                    st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** En proceso{info_persona}")
                 else:
                     nombre_str = persona['nombre'] if persona else "Desconocido"
                     dni_str = persona['dni'] if persona else "N/A"
@@ -459,15 +520,16 @@ Consideraciones metodológicas sobre la administración:
                 if st.button("🗑️ Borrar", key=f"btn_borrar_{clave}", use_container_width=True):
                     if st.session_state.get("token_activo") == clave:
                         del st.session_state["token_activo"]
-                    del claves_globales[clave]
+                    eliminar_token_db(clave)
                     st.rerun()
             st.divider()
     else:
-        st.write("No hay claves generadas todavía en este ciclo de sesión.")
+        st.write("No hay claves generadas todavía en este ciclo.")
 
 else:
     st.title("⚖️ Evaluaciones Psicológicas Forenses")
     
+    claves_globales = cargar_datos_db()
     if "token_activo" in st.session_state:
         if st.session_state["token_activo"] not in claves_globales:
             del st.session_state["token_activo"]
@@ -489,7 +551,8 @@ else:
     
     else:
         token_actual = st.session_state["token_activo"]
-        datos_token = claves_globales[token_actual]
+        claves_globales = cargar_datos_db()
+        datos_token = claves_globales.get(token_actual, {"estado": "activa", "datos_persona": None, "evaluaciones": {}})
         
         # PASO 2: Cargar Datos Personales, Fecha/Hora GMT Buenos Aires y Hash de seguridad
         if datos_token.get("datos_persona") is None:
@@ -511,29 +574,27 @@ else:
                 
                 if guardar_datos:
                     if nombre_comp.strip() != "" and dni_val.strip() != "":
-                        # Captura automática de fecha y hora exacta en GMT Buenos Aires (America/Argentina/Buenos_Aires)
                         try:
                             tz_ba = ZoneInfo("America/Argentina/Buenos_Aires")
                             ahora_ba = datetime.now(tz_ba)
                         except Exception:
-                            # Fallback si el entorno no dispone de ZoneInfo
                             tz_ba = timezone(timedelta(hours=-3))
                             ahora_ba = datetime.now(tz_ba)
                         
                         fecha_eval = ahora_ba.strftime("%Y-%m-%d")
                         hora_eval = ahora_ba.strftime("%H:%M:%S")
                         
-                        # Generación de hash SHA-256 de seguridad combinando token, identidad y marca temporal GMT Buenos Aires
                         str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{fecha_eval}-{hora_eval}"
                         hash_generado = hashlib.sha256(str_para_hash.encode('utf-8')).hexdigest()
                         
-                        claves_globales[token_actual]["datos_persona"] = {
+                        datos_token["datos_persona"] = {
                             "nombre": nombre_comp.strip(),
                             "dni": dni_val.strip(),
                             "fecha": fecha_eval,
                             "hora": hora_eval,
                             "hash_seguridad": hash_generado
                         }
+                        guardar_token_db(token_actual, datos_token)
                         st.rerun()
                     else:
                         st.warning("Por favor complete su Nombre, Apellido y DNI para poder avanzar.")
@@ -593,7 +654,8 @@ else:
                             )
                             st.divider()
                         if st.form_submit_button("Finalizar y Enviar LSB-50", use_container_width=True):
-                            claves_globales[token_actual]["evaluaciones"]["LSB-50"] = respuestas_lsb
+                            datos_token["evaluaciones"]["LSB-50"] = respuestas_lsb
+                            guardar_token_db(token_actual, datos_token)
                             st.session_state["test_enviado"] = True
                             st.rerun()
 
@@ -609,7 +671,8 @@ else:
                             )
                             st.divider()
                         if st.form_submit_button("Finalizar y Enviar MMPI-2-RF", use_container_width=True):
-                            claves_globales[token_actual]["evaluaciones"]["MMPI-2-RF"] = respuestas_mmpi
+                            datos_token["evaluaciones"]["MMPI-2-RF"] = respuestas_mmpi
+                            guardar_token_db(token_actual, datos_token)
                             st.session_state["test_enviado"] = True
                             st.rerun()
 
@@ -626,7 +689,8 @@ else:
                             )
                             st.divider()
                         if st.form_submit_button("Finalizar y Enviar CUIDA", use_container_width=True):
-                            claves_globales[token_actual]["evaluaciones"]["CUIDA"] = respuestas_cuida
+                            datos_token["evaluaciones"]["CUIDA"] = respuestas_cuida
+                            guardar_token_db(token_actual, datos_token)
                             st.session_state["test_enviado"] = True
                             st.rerun()
 
@@ -643,7 +707,8 @@ else:
                             )
                             st.divider()
                         if st.form_submit_button("Finalizar y Enviar STAI", use_container_width=True):
-                            claves_globales[token_actual]["evaluaciones"]["STAI"] = respuestas_stai
+                            datos_token["evaluaciones"]["STAI"] = respuestas_stai
+                            guardar_token_db(token_actual, datos_token)
                             st.session_state["test_enviado"] = True
                             st.rerun()
 
@@ -659,6 +724,7 @@ else:
                             )
                             st.divider()
                         if st.form_submit_button("Finalizar y Enviar BDI-II", use_container_width=True):
-                            claves_globales[token_actual]["evaluaciones"]["BDI-II"] = respuestas_bdi
+                            datos_token["evaluaciones"]["BDI-II"] = respuestas_bdi
+                            guardar_token_db(token_actual, datos_token)
                             st.session_state["test_enviado"] = True
                             st.rerun()
