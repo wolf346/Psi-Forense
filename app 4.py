@@ -149,7 +149,7 @@ ITEMS_MMPI2RF = [
     "48. Veo cosas, animales o personas que otros no ven.", "49. Tengo dificultades para mantener el equilibrio al caminar.", "50. Me irrita fácilmente la gente.",
     "51. Quisiera no ser tan tímido.", "52. Disfruto de la compañía de los demás.", "53. Tengo ganas de rendirme fácilmente.",
     "54. A veces escucho voces y no sé de dónde vienen.", "55. Me cuesta concentrarme.", "56. Me siento acorralado por las circunstancias.",
-    "57. Me gusta la emoción y la aventura.", "58. Tengo problemas de digestión.", "59. Siento que mi familia no me apoya.",
+    "57. Me gusta la emoción y la aventura.", "58. Tengo problemas de digestión.", "59. Siento que la familia no me apoya.",
     "60. A veces pierdo el sentido del tiempo.", "61. Me cuesta hacer amigos.", "62. Siento que no valgo para nada.",
     "63. Sufro de ataques de pánico repentinos.", "64. Me gusta cocinar.", "65. Siento que la gente habla a mis espaldas.",
     "66. Duermo profundamente toda la noche.", "67. A veces me siento lleno de energía.", "68. Me molesta estar en lugares cerrados.",
@@ -242,7 +242,7 @@ ITEMS_MMPI2RF = [
     "327. Me resulta complejo perdonar agravios.", "328. Siento un agotamiento permanente.", "329. Me agrada cuidar el entorno natural.",
     "330. Siento ardor persistente en la piel.", "331. Me cuesta trabajo establecer prioridades claras.", "332. A veces dudo de mis convicciones más profundas.",
     "333. Me siento respetado por mis semejantes.", "334. Siento envidia irracional.", "335. Sufro de malestar articular intermitente.",
-    "336. Me atrae la literatura filosófica.", "337. Me resulta difícil admitir derrotas.", "338. Siento que mi vida tiene un propósito claro."
+    "336. Me atrae la literatura filosófica.", "337. Me resulta difícil admitir derrotas.", "338. Siento que my vida tiene un propósito claro."
 ]
 OPCIONES_MMPI = ["Verdadero", "Falso"]
 
@@ -392,7 +392,7 @@ token_url = query_params.get("token", None)
 
 if token_url and "token_activo" not in st.session_state:
     token_limpio = token_url.strip().upper()
-    if token_limpio in claves_globales:
+    if token_limpio in cargar_datos_db():
         st.session_state["token_activo"] = token_limpio
         st.query_params.clear()
 
@@ -436,7 +436,6 @@ if st.session_state["perito_autenticado"]:
             "evaluaciones": {}
         }
         guardar_token_db(nueva_clave, info_nueva)
-        claves_globales = cargar_datos_db()
         
         st.success(f"¡Clave generada con éxito!: **`{nueva_clave}`**")
         
@@ -450,7 +449,6 @@ if st.session_state["perito_autenticado"]:
     st.divider()
     
     st.subheader("📋 Estado de Claves y Evaluaciones")
-    # Refrescamos desde la base de datos para ver los datos más recientes en tiempo real
     claves_globales = cargar_datos_db()
     
     if claves_globales:
@@ -458,27 +456,54 @@ if st.session_state["perito_autenticado"]:
             info = claves_globales[clave]
             persona = info.get("datos_persona")
             evals = info.get("evaluaciones", {})
-            col_texto, col_borrar = st.columns([5, 1])
+            
+            # Distribución visual mejorada para incorporar el botón pericial de acceso directo
+            col_texto, col_btn_ver, col_borrar = st.columns([4, 2, 1])
             with col_texto:
                 if not evals and not persona:
-                    st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** Disponible / Activa (Pendiente de ingreso)")
+                    st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** Disponible (Pendiente)")
                 elif not evals:
                     info_persona = f" (Iniciado por: {persona['nombre']} - DNI {persona['dni']})" if persona else ""
                     st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** En proceso{info_persona}")
                 else:
                     nombre_str = persona['nombre'] if persona else "Desconocido"
                     dni_str = persona['dni'] if persona else "N/A"
-                    fecha_str = persona['fecha'] if persona else "N/A"
-                    hora_str = persona.get('hora', 'N/A')
-                    hash_val = persona.get('hash_seguridad', 'N/A')
                     tests_realizados = ", ".join(list(evals.keys()))
+                    st.markdown(f"🔴 **Clave:** `{clave}` | **Eval:** {nombre_str} | **Pruebas:** {tests_realizados}")
+            
+            with col_btn_ver:
+                # BOTÓN EN EL ESCRITORIO DEL PERITO PARA VER DATOS, HASH, TOKEN Y PROTOCOLO
+                if persona:
+                    btn_label = "👁️ Ver Protocolo" if evals else "👤 Ver Datos"
+                    if st.button(btn_label, key=f"ver_detalle_{clave}", use_container_width=True):
+                        st.session_state[f"modal_ver_{clave}"] = not st.session_state.get(f"modal_ver_{clave}", False)
+                else:
+                    st.write("_Sin datos aún_")
+
+            with col_borrar:
+                if st.button("🗑️ Borrar", key=f"btn_borrar_{clave}", use_container_width=True):
+                    if st.session_state.get("token_activo") == clave:
+                        del st.session_state["token_activo"]
+                    eliminar_token_db(clave)
+                    st.rerun()
+
+            # Despliegue en formato llano si el perito hace clic en el botón de ver
+            if st.session_state.get(f"modal_ver_{clave}", False):
+                with st.container():
+                    st.info(f"### 🛡️ Protocolo y Trazabilidad Forense - Token: `{clave}`")
+                    if persona:
+                        st.write(f"**Nombre y Apellido:** {persona.get('nombre', 'N/A')}")
+                        st.write(f"**Número de DNI:** {persona.get('dni', 'N/A')}")
+                        st.write(f"**Fecha y Hora (Buenos Aires):** {persona.get('fecha', 'N/A')} - {persona.get('hora', 'N/A')} hs")
+                        st.write(f"**Hash de Seguridad (SHA-256):** `{persona.get('hash_seguridad', 'N/A')}`")
+                    else:
+                        st.warning("El evaluado aún no ha completado sus datos filiatorios.")
                     
-                    st.markdown(f"🔴 **Clave:** `{clave}` | **Evaluado:** {nombre_str} (DNI: {dni_str}) | **Pruebas:** {tests_realizados} | **Hash:** `{hash_val[:10]}...`")
-                    
-                    with st.expander(f"Ver respuestas e informes de {nombre_str} - Código {clave}"):
+                    if evals:
+                        st.write("---")
+                        st.write("#### 📊 Respuestas Detalladas de las Pruebas:")
                         for test_nombre, respuestas_dict in evals.items():
-                            st.write(f"### 📋 Protocolo de Respuestas Registradas - {test_nombre}")
-                            
+                            st.markdown(f"**Instrumento:** `{test_nombre}`")
                             if respuestas_dict:
                                 tabla_datos = []
                                 key_test = None
@@ -498,30 +523,14 @@ if st.session_state["perito_autenticado"]:
                                         if resp_val in map_ops:
                                             respuesta_texto = map_ops[resp_val]
                                     tabla_datos.append({
-                                        "Consigna / Ítem Respondido": consigna_texto,
-                                        "Respuesta Seleccionada": respuesta_texto
+                                        "Consigna / Ítem": consigna_texto,
+                                        "Respuesta": respuesta_texto
                                     })
-                                
                                 st.dataframe(tabla_datos, use_container_width=True, hide_index=True)
-                            
-                            st.write("**Párrafo de Resguardo Metodológico para el Informe Pericial:**")
-                            texto_informe = f"""III. TÉCNICAS E INSTRUMENTOS ADMINISTRADOS
-• Instrumento: {test_nombre}
-• Evaluado/a: {nombre_str} (DNI: {dni_str})
-• Fecha de administración: {fecha_str}
-• Hora de administración (GMT Buenos Aires): {hora_str} hs
-• Hash de Seguridad (SHA-256): {hash_val}
-Consideraciones metodológicas sobre la administración:
-"Las pruebas psicométricas fueron administradas en entorno controlado mediante un sistema digital de captura de respuestas de uso exclusivo del perito, garantizando la fidelidad en la transcripción de los reactivos y la integridad de la cadena de custodia mediante firma hash."
-"""
-                            st.code(texto_informe, language="markdown")
-                            st.divider()
-            with col_borrar:
-                if st.button("🗑️ Borrar", key=f"btn_borrar_{clave}", use_container_width=True):
-                    if st.session_state.get("token_activo") == clave:
-                        del st.session_state["token_activo"]
-                    eliminar_token_db(clave)
-                    st.rerun()
+                    else:
+                        st.write("_Aún no se han registrado respuestas completadas para esta clave._")
+                    st.write("_________________________________________________")
+
             st.divider()
     else:
         st.write("No hay claves generadas todavía en este ciclo.")
@@ -597,7 +606,7 @@ else:
                         guardar_token_db(token_actual, datos_token)
                         st.rerun()
                     else:
-                        st.warning("Por favor complete su Nombre, Apellido y DNI para poder avanzar.")
+                        st.warning("Por favor complete sus Nombre, Apellido y DNI para poder avanzar.")
         
         # PASO 3: Selección de Cuestionarios y Escalas
         else:
