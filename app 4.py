@@ -497,7 +497,7 @@ else:
             with col_info:
                 st.subheader("Datos del Evaluado y Registro de Identidad")
             with col_salir:
-               if st.button("🔴 Salir", use_container_width=True):
+if st.button("🔴 Salir", use_container_width=True):
     del st.session_state["token_activo"]
     st.query_params.clear()
     st.rerun()
