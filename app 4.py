@@ -478,7 +478,7 @@ else:
     
     clave_ingresada = st.text_input("Código asignado:", key="input_codigo_evaluado_unico", placeholder="Ej: EVAL-SS4BJQ", autocomplete="off")
         
-        if st.button("Ingresar", use_container_width=True):
+    if st.button("Ingresar", use_container_width=True):
             clave_limpia = clave_ingresada.strip().upper()
             if clave_limpia in claves_globales:
                 st.session_state["token_activo"] = clave_limpia
