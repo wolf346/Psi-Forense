@@ -216,7 +216,7 @@ ITEMS_MMPI2RF = [
     "249. Me gusta ver eventos deportivos.", "250. Siento ardor de estómago por la noche.", "251. Me resulta complicado tomar iniciativa en grupo.",
     "252. Siento que el pesimismo me abruma.", "253. Me siento agradecido por las oportunidades.", "254. Sufro de cosquilleo continuo en los dedos.",
     "255. Me cuesta trabajo perdonar faltas menores.", "256. A veces pierdo el control emocional brevemente.", "257. Me complace mantener un hogar ordenado.",
-    "258. Siento fatiga sin haber hecho esfuerzo.", "259. Me cuesta adaptarme a directrices estrictas.", "260. Siento que mis opiniones no cuentan.",
+    "258. Siento fatiga sin haber hecho esfuerzo.", "259. Me cuesta adaptarme a directrices estrictas.", "260. Siento que my opiniones no cuentan.",
     "261. Disfruto del trabajo artesanal.", "262. Siento palpitaciones al enfrentar problemas.", "263. Me resulta complejo expresar afecto físico.",
     "264. Siento insatisfacción constante.", "265. Me agrada participar en proyectos cívicos.", "266. Tengo pesadez de párpados continua.",
     "267. Me cuesta trabajo seguir instrucciones paso a paso.", "268. A veces dudo de mi propia identidad.", "269. Me siento seguro frente a nuevos proyectos.",
@@ -360,7 +360,7 @@ ITEMS_BDI = [
     {"titulo": "5. Sentimientos de culpa", "opciones": ["0 - No me siento particularmente culpable.", "1 - Me siento culpable respecto a varias cosas que he hecho o debería haber hecho.", "2 - Me siento bastante culpable la mayor parte del tiempo.", "3 - Me siento culpable todo el tiempo."]},
     {"titulo": "6. Sentimientos de castigo", "opciones": ["0 - No siento que esté siendo castigado/a.", "1 - Siento que tal vez pueda ser castigado/a.", "2 - Espero ser castigado/a.", "3 - Siento que estoy siendo castigado/a."]},
     {"titulo": "7. Disconformidad con uno mismo", "opciones": ["0 - Siento lo mismo que antes sobre mí mismo/a.", "1 - He perdido la confianza en mí mismo/a.", "2 - Estoy decepcionado/a de mí mismo/a.", "3 - No me gusto en absoluto."]},
-    {"titulo": "8. Autocrítica", "opciones": ["0 - No me critico ni me culpo más de lo habitual.", "1 - Estoy más crítico/a conmigo mismo/a de lo que solía estar.", "2 - Me critico a mí mismo/a por todos mis errores.", "3 - Me culpo a mí mismo/a por todo lo malo que sucede."]},
+    {"titulo": "8. Autocrítica", "opciones": ["0 - No me critico ni me culpo más de lo habitual.", "1 - Estoy más crítico/a conmigo mismo/a de lo que solía estar.", "2 - Me critico a mí mismo/a por todos los errores.", "3 - Me culpo a mí mismo/a por todo lo malo que sucede."]},
     {"titulo": "9. Pensamientos o deseos suicidas", "opciones": ["0 - No tengo ningún pensamiento de matarme.", "1 - Tengo pensamientos de matarme, pero no los llevaría a cabo.", "2 - Me gustaría matarme.", "3 - Me mataría si tuviera la oportunidad."]},
     {"titulo": "10. Llanto", "opciones": ["0 - No lloro más de lo que solía hacerlo.", "1 - Lloro más de lo que solía hacerlo.", "2 - Lloro por cualquier pequeñez.", "3 - Siento ganas de llorar pero no puedo."]},
     {"titulo": "11. Agitación", "opciones": ["0 - No me siento más inquieto/a o agitado/a que de costumbre.", "1 - Me siento más inquieto/a o agitado/a que de costumbre.", "2 - Estoy tan inquieto/a o agitado/a que me cuesta quedarme quieto/a.", "3 - Estoy tan inquieto/a o agitado/a que tengo que estar en constante movimiento."]},
@@ -474,9 +474,14 @@ if st.session_state["perito_autenticado"]:
             with col_btn_ver:
                 # BOTÓN EN EL ESCRITORIO DEL PERITO PARA VER DATOS, HASH, TOKEN Y PROTOCOLO
                 if persona:
-                    btn_label = "👁️ Ver Protocolo" if evals else "👤 Ver Datos"
-                    if st.button(btn_label, key=f"ver_detalle_{clave}", use_container_width=True):
-                        st.session_state[f"modal_ver_{clave}"] = not st.session_state.get(f"modal_ver_{clave}", False)
+                    if f"modal_ver_{clave}" not in st.session_state:
+                        st.session_state[f"modal_ver_{clave}"] = False
+                    
+                    btn_label = "👁️ Ocultar Protocolo" if st.session_state[f"modal_ver_{clave}"] else "👁️ Ver Protocolo" if evals else "👤 Ver Datos"
+                    
+                    if st.button(btn_label, key=f"btn_ver_{clave}", use_container_width=True):
+                        st.session_state[f"modal_ver_{clave}"] = not st.session_state[f"modal_ver_{clave}"]
+                        st.rerun()
                 else:
                     st.write("_Sin datos aún_")
 
@@ -484,6 +489,8 @@ if st.session_state["perito_autenticado"]:
                 if st.button("🗑️ Borrar", key=f"btn_borrar_{clave}", use_container_width=True):
                     if st.session_state.get("token_activo") == clave:
                         del st.session_state["token_activo"]
+                    if f"modal_ver_{clave}" in st.session_state:
+                        del st.session_state[f"modal_ver_{clave}"]
                     eliminar_token_db(clave)
                     st.rerun()
 
