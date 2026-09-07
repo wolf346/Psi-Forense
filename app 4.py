@@ -475,8 +475,8 @@ else:
     if "token_activo" not in st.session_state:
         st.subheader("🔑 Acceso a Evaluación")
         st.write("Por favor, ingrese el **código de acceso** o utilice el enlace directo que le envió el profesional:")
-        
-       clave_ingresada = st.text_input("Código asignado:", key="input_codigo_evaluado_unico", placeholder="Ej: EVAL-SS4BJQ", autocomplete="off")
+    
+    clave_ingresada = st.text_input("Código asignado:", key="input_codigo_evaluado_unico", placeholder="Ej: EVAL-SS4BJQ", autocomplete="off")
         
         if st.button("Ingresar", use_container_width=True):
             clave_limpia = clave_ingresada.strip().upper()
