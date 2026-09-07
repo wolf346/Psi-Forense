@@ -494,7 +494,7 @@ if st.session_state["perito_autenticado"]:
                     eliminar_token_db(clave)
                     st.rerun()
 
-            # Despliegue en formato llano si el perito hace clic en el botón de ver
+            # Despliegue en formato llano si el perito hace clic en el botón de ver (CORREGIDO CON KEYS ÚNICAS POR CADA TEST/TABLA)
             if st.session_state.get(f"modal_ver_{clave}", False):
                 with st.container():
                     st.info(f"### 🛡️ Protocolo y Trazabilidad Forense - Token: `{clave}`")
@@ -533,7 +533,8 @@ if st.session_state["perito_autenticado"]:
                                         "Consigna / Ítem": consigna_texto,
                                         "Respuesta": respuesta_texto
                                     })
-                                st.dataframe(tabla_datos, use_container_width=True, hide_index=True)
+                                # CORRECCIÓN CLAVE: Se añade key única combinando token y nombre del test para evitar conflictos al visualizar múltiples instrumentos
+                                st.dataframe(tabla_datos, key=f"df_{clave}_{test_nombre}", use_container_width=True, hide_index=True)
                     else:
                         st.write("_Aún no se han registrado respuestas completadas para esta clave._")
                     st.write("_________________________________________________")
