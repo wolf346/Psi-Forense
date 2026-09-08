@@ -453,6 +453,8 @@ if st.session_state["perito_autenticado"]:
     st.divider()
     
     st.subheader("📋 Estado de Claves y Evaluaciones")
+    
+    # Cargamos datos frescos desde SQLite al renderizar el panel
     claves_globales = cargar_datos_db()
     
     if claves_globales:
@@ -462,15 +464,17 @@ if st.session_state["perito_autenticado"]:
             evals = info.get("evaluaciones", {})
             estado_token = info.get("estado", "activa")
             
-            col_texto, col_btn_ver, col_borrar = st.columns([4, 2, 1])
+            # Ajustamos las columnas para incluir el botón "Actualizar" al lado de "Borrar"
+            col_texto, col_btn_ver, col_actualizar, col_borrar = st.columns([3.5, 1.8, 1.2, 1.0])
+            
             with col_texto:
                 if estado_token == "finalizado":
                     nombre_str = persona['nombre'] if persona else "Desconocido"
-                    st.markdown(f"🔒 **Clave:** `{clave}` | **Estado:** Finalizado / Usado ({nombre_str})")
+                    st.markdown(f"🔒 **Clave:** `{clave}` | **Estado:** Finalizado ({nombre_str})")
                 elif not evals and not persona:
-                    st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** Disponible (Pendiente)")
+                    st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** Disponible")
                 elif not evals:
-                    info_persona = f" (Iniciado por: {persona['nombre']} - DNI {persona['dni']})" if persona else ""
+                    info_persona = f" ({persona['nombre']})" if persona else ""
                     st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** En proceso{info_persona}")
                 else:
                     nombre_str = persona['nombre'] if persona else "Desconocido"
@@ -482,13 +486,18 @@ if st.session_state["perito_autenticado"]:
                     if f"modal_ver_{clave}" not in st.session_state:
                         st.session_state[f"modal_ver_{clave}"] = False
                     
-                    btn_label = "👁️ Ocultar Protocolo" if st.session_state[f"modal_ver_{clave}"] else "👁️ Ver Protocolo" if evals else "👤 Ver Datos"
+                    btn_label = "👁️ Ocultar" if st.session_state[f"modal_ver_{clave}"] else "👁️ Ver Protocolo" if evals else "👤 Ver Datos"
                     
                     if st.button(btn_label, key=f"btn_ver_{clave}", use_container_width=True):
                         st.session_state[f"modal_ver_{clave}"] = not st.session_state[f"modal_ver_{clave}"]
                         st.rerun()
                 else:
-                    st.write("_Sin datos aún_")
+                    st.write("_Sin datos_")
+
+            with col_actualizar:
+                # Botón para recargar y sincronizar datos actualizados desde la base
+                if st.button("🔄 Actualizar", key=f"btn_actualizar_{clave}", use_container_width=True):
+                    st.rerun()
 
             with col_borrar:
                 if st.button("🗑️ Borrar", key=f"btn_borrar_{clave}", use_container_width=True):
@@ -628,7 +637,6 @@ else:
                 hora_str = persona.get("hora", "N/A")
                 evaluaciones_realizadas = datos_token.get("evaluaciones", {})
                 
-                # Se eliminó el botón de la parte superior y se mantiene solo la información institucional limpia
                 st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Hora (BA): **{hora_str}** | Hash: `{persona['hash_seguridad'][:10]}...`")
 
                 if st.session_state.get("test_enviado"):
@@ -672,7 +680,7 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar LSB-50", use_container_width=True):
                                 datos_token["evaluaciones"]["LSB-50"] = respuestas_lsb
-                                datos_token["estado"] = "finalizado"  # Cierra la clave al enviar la escala
+                                datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
