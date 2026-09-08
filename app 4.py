@@ -59,7 +59,7 @@ def cargar_datos_db():
     for row in rows:
         token, estado, dp, evals = row
         data[token] = {
-            "estado": estado,
+            "estado": estado if estado else "activa",
             "datos_persona": json.loads(dp) if dp else None,
             "evaluaciones": json.loads(evals) if evals else {}
         }
@@ -226,7 +226,7 @@ ITEMS_MMPI2RF = [
     "279. Me gratifica aprender nuevas tecnologías.", "280. Siento vértigo al mirar desde las alturas.", "281. Me resulta difícil superar ofensas pasadas.",
     "282. Siento un vacío profundo a menudo.", "283. Me alegra poder orientar a otros.", "284. Tengo episodios de visión doble.",
     "285. Me cuesta trabajo establecer límites.", "286. A veces me asalta una euforia desmedida.", "287. Me siento cómodo en ambientes estructurados.",
-    "288. Siento constante inquietud en las piernas.", "289. Me resulta duro admitir mis errores.", "290. Siento que la suerte nunca me sonríe.",
+    "288. Siento constante inquietud en las piernas.", "289. Me resulta duro admitir mis errores.", "290. Siento que la suerte nunca está de mi lado.",
     "291. Disfruto del cine dramático.", "292. Siento presión constante en la frente.", "293. Me cuesta empatizar con quienes sufren.",
     "294. Siento que no tengo el control de mi destino.", "295. Me siento capaz de resolver crisis cotidianas.", "296. Sufro de sequedad de piel insoportable.",
     "297. Me cuesta trabajo pedir perdón.", "298. A veces experimento cambios bruscos de humor.", "299. Me resulta gratificante la tranquilidad del hogar.",
@@ -392,9 +392,13 @@ token_url = query_params.get("token", None)
 
 if token_url and "token_activo" not in st.session_state:
     token_limpio = token_url.strip().upper()
-    if token_limpio in cargar_datos_db():
-        st.session_state["token_activo"] = token_limpio
-        st.query_params.clear()
+    datos_actuales = cargar_datos_db()
+    if token_limpio in datos_actuales:
+        if datos_actuales[token_limpio].get("estado") == "finalizado":
+            st.error("Este enlace ya ha sido utilizado y finalizado. No puede volver a ingresar.")
+        else:
+            st.session_state["token_activo"] = token_limpio
+            st.query_params.clear()
 
 # -----------------------------------------------------------------------------
 # 3. BARRA LATERAL RESTRICTORA (ACCESO PRIVADO AL PERITO)
@@ -456,23 +460,25 @@ if st.session_state["perito_autenticado"]:
             info = claves_globales[clave]
             persona = info.get("datos_persona")
             evals = info.get("evaluaciones", {})
+            estado_token = info.get("estado", "activa")
             
             # Distribución visual mejorada para incorporar el botón pericial de acceso directo
             col_texto, col_btn_ver, col_borrar = st.columns([4, 2, 1])
             with col_texto:
-                if not evals and not persona:
+                if estado_token == "finalizado":
+                    nombre_str = persona['nombre'] if persona else "Desconocido"
+                    st.markdown(f"🔒 **Clave:** `{clave}` | **Estado:** Finalizado / Usado ({nombre_str})")
+                elif not evals and not persona:
                     st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** Disponible (Pendiente)")
                 elif not evals:
                     info_persona = f" (Iniciado por: {persona['nombre']} - DNI {persona['dni']})" if persona else ""
                     st.markdown(f"🟢 **Clave:** `{clave}` | **Estado:** En proceso{info_persona}")
                 else:
                     nombre_str = persona['nombre'] if persona else "Desconocido"
-                    dni_str = persona['dni'] if persona else "N/A"
                     tests_realizados = ", ".join(list(evals.keys()))
                     st.markdown(f"🔴 **Clave:** `{clave}` | **Eval:** {nombre_str} | **Pruebas:** {tests_realizados}")
             
             with col_btn_ver:
-                # BOTÓN EN EL ESCRITORIO DEL PERITO PARA VER DATOS, HASH, TOKEN Y PROTOCOLO
                 if persona:
                     if f"modal_ver_{clave}" not in st.session_state:
                         st.session_state[f"modal_ver_{clave}"] = False
@@ -494,7 +500,7 @@ if st.session_state["perito_autenticado"]:
                     eliminar_token_db(clave)
                     st.rerun()
 
-            # Despliegue en formato llano si el perito hace clic en el botón de ver (CORREGIDO CON KEYS ÚNICAS POR CADA TEST/TABLA)
+            # Despliegue en formato llano si el perito hace clic en el botón de ver
             if st.session_state.get(f"modal_ver_{clave}", False):
                 with st.container():
                     st.info(f"### 🛡️ Protocolo y Trazabilidad Forense - Token: `{clave}`")
@@ -533,7 +539,6 @@ if st.session_state["perito_autenticado"]:
                                         "Consigna / Ítem": consigna_texto,
                                         "Respuesta": respuesta_texto
                                     })
-                                # CORRECCIÓN CLAVE: Se añade key única combinando token y nombre del test para evitar conflictos al visualizar múltiples instrumentos
                                 st.dataframe(tabla_datos, key=f"df_{clave}_{test_nombre}", use_container_width=True, hide_index=True)
                     else:
                         st.write("_Aún no se han registrado respuestas completadas para esta clave._")
@@ -560,9 +565,13 @@ else:
         if st.button("Ingresar", use_container_width=True):
             clave_limpia = clave_ingresada.strip().upper()
             if clave_limpia in claves_globales:
-                st.session_state["token_activo"] = clave_limpia
-                st.session_state["test_enviado"] = False
-                st.rerun()
+                estado_token = claves_globales[clave_limpia].get("estado", "activa")
+                if estado_token == "finalizado":
+                    st.error("Este token ya ha sido utilizado y finalizado. No puede volver a ingresar.")
+                else:
+                    st.session_state["token_activo"] = clave_limpia
+                    st.session_state["test_enviado"] = False
+                    st.rerun()
             else:
                 st.error("Código inválido o inexistente. Verifique el código ingresado con el evaluador.")
     
@@ -571,177 +580,188 @@ else:
         claves_globales = cargar_datos_db()
         datos_token = claves_globales.get(token_actual, {"estado": "activa", "datos_persona": None, "evaluaciones": {}})
         
-        # PASO 2: Cargar Datos Personales, Fecha/Hora GMT Buenos Aires y Hash de seguridad
-        if datos_token.get("datos_persona") is None:
-            col_info, col_salir = st.columns([4, 1])
-            with col_info:
-                st.subheader("Datos del Evaluado y Registro de Identidad")
-            with col_salir:
-                if st.button("🔴 Salir", use_container_width=True):
-                    del st.session_state["token_activo"]
-                    st.query_params.clear()
-                    st.rerun()
-            st.write("Por favor, complete sus datos filiatorios antes de acceder a las escalas:")
-            
-            with st.form("form_datos_personales"):
-                nombre_comp = st.text_input("Nombre y Apellido completo:", autocomplete="off")
-                dni_val = st.text_input("Número de DNI / Documento:", autocomplete="off")
-                
-                guardar_datos = st.form_submit_button("Generar Hash y Acceder a las Escalas", use_container_width=True)
-                
-                if guardar_datos:
-                    if nombre_comp.strip() != "" and dni_val.strip() != "":
-                        try:
-                            tz_ba = ZoneInfo("America/Argentina/Buenos_Aires")
-                            ahora_ba = datetime.now(tz_ba)
-                        except Exception:
-                            tz_ba = timezone(timedelta(hours=-3))
-                            ahora_ba = datetime.now(tz_ba)
-                        
-                        fecha_eval = ahora_ba.strftime("%Y-%m-%d")
-                        hora_eval = ahora_ba.strftime("%H:%M:%S")
-                        
-                        str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{fecha_eval}-{hora_eval}"
-                        hash_generado = hashlib.sha256(str_para_hash.encode('utf-8')).hexdigest()
-                        
-                        datos_token["datos_persona"] = {
-                            "nombre": nombre_comp.strip(),
-                            "dni": dni_val.strip(),
-                            "fecha": fecha_eval,
-                            "hora": hora_eval,
-                            "hash_seguridad": hash_generado
-                        }
-                        guardar_token_db(token_actual, datos_token)
-                        st.rerun()
-                    else:
-                        st.warning("Por favor complete sus Nombre, Apellido y DNI para poder avanzar.")
-        
-        # PASO 3: Selección de Cuestionarios y Escalas
+        # Validar si el token fue invalidado externamente
+        if datos_token.get("estado") == "finalizado":
+            st.error("Este token ya ha sido finalizado. Su sesión ha caducado.")
+            if st.button("Aceptar e ir al inicio", use_container_width=True):
+                del st.session_state["token_activo"]
+                st.rerun()
         else:
-            persona = datos_token["datos_persona"]
-            hora_str = persona.get("hora", "N/A")
-            evaluaciones_realizadas = datos_token.get("evaluaciones", {})
+            # PASO 2: Cargar Datos Personales, Fecha/Hora GMT Buenos Aires y Hash de seguridad
+            if datos_token.get("datos_persona") is None:
+                col_info, col_salir = st.columns([4, 1])
+                with col_info:
+                    st.subheader("Datos del Evaluado y Registro de Identidad")
+                with col_salir:
+                    if st.button("🔴 Salir", use_container_width=True):
+                        del st.session_state["token_activo"]
+                        st.query_params.clear()
+                        st.rerun()
+                st.write("Por favor, complete sus datos filiatorios antes de acceder a las escalas:")
+                
+                with st.form("form_datos_personales"):
+                    nombre_comp = st.text_input("Nombre y Apellido completo:", autocomplete="off")
+                    dni_val = st.text_input("Número de DNI / Documento:", autocomplete="off")
+                    
+                    guardar_datos = st.form_submit_button("Generar Hash y Acceder a las Escalas", use_container_width=True)
+                    
+                    if guardar_datos:
+                        if nombre_comp.strip() != "" and dni_val.strip() != "":
+                            try:
+                                tz_ba = ZoneInfo("America/Argentina/Buenos_Aires")
+                                ahora_ba = datetime.now(tz_ba)
+                            except Exception:
+                                tz_ba = timezone(timedelta(hours=-3))
+                                ahora_ba = datetime.now(tz_ba)
+                            
+                            fecha_eval = ahora_ba.strftime("%Y-%m-%d")
+                            hora_eval = ahora_ba.strftime("%H:%M:%S")
+                            
+                            str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{fecha_eval}-{hora_eval}"
+                            hash_generado = hashlib.sha256(str_para_hash.encode('utf-8')).hexdigest()
+                            
+                            datos_token["datos_persona"] = {
+                                "nombre": nombre_comp.strip(),
+                                "dni": dni_val.strip(),
+                                "fecha": fecha_eval,
+                                "hora": hora_eval,
+                                "hash_seguridad": hash_generado
+                            }
+                            guardar_token_db(token_actual, datos_token)
+                            st.rerun()
+                        else:
+                            st.warning("Por favor complete sus Nombre, Apellido y DNI para poder avanzar.")
             
-            col_datos, col_boton = st.columns([3, 1])
-            with col_datos:
-                st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Hora (BA): **{hora_str}** | Hash: `{persona['hash_seguridad'][:10]}...`")
-            with col_boton:
-                if st.button("🔴 Finalizar y Salir", use_container_width=True):
-                    del st.session_state["token_activo"]
-                    st.query_params.clear()
-                    st.rerun()
-
-            if st.session_state.get("test_enviado"):
-                st.success("¡Escala enviada y registrada con éxito bajo cadena de custodia digital!")
-                st.write("Sus respuestas han sido almacenadas de manera segura para el perito.")
-                st.divider()
-                if st.button("🏠 Completar otra escala / Volver al menú", type="primary", use_container_width=True):
-                    st.session_state["test_enviado"] = False
-                    st.rerun()
+            # PASO 3: Selección de Cuestionarios y Escalas
             else:
-                if evaluaciones_realizadas:
-                    st.write("✅ **Escalas completadas hasta el momento:** " + ", ".join(list(evaluaciones_realizadas.keys())))
+                persona = datos_token["datos_persona"]
+                hora_str = persona.get("hora", "N/A")
+                evaluaciones_realizadas = datos_token.get("evaluaciones", {})
                 
-                test_seleccionado = st.selectbox(
-                    "Seleccione la escala a completar:",
-                    [
-                        "-- Seleccione una opción --", 
-                        "Listado de Síntomas Breve (LSB-50)", 
-                        "MMPI-2-RF (Inventario Multifásico de Personalidad)",
-                        "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)",
-                        "STAI (Cuestionario de Ansiedad Estado-Rasgo)",
-                        "BDI-II (Inventario de Depresión de Beck)"
-                    ]
-                )
-                
-                # A) LSB-50
-                if test_seleccionado == "Listado de Síntomas Breve (LSB-50)":
-                    st.subheader("Listado de Síntomas Breve (LSB-50)")
-                    st.info("""
-                    **Instrucciones oficiales:**
-                    A continuación se presenta una lista de molestias, problemas o síntomas psicológicos y físicos. Lea cada uno detenidamente y señale hasta qué punto le ha preocupado o molestado **DURANTE LAS ÚLTIMAS DOS SEMANAS, INCLUYENDO EL DÍA DE HOY**.
-                    * **0** = Nada | **1** = Algo | **2** = Moderadamente | **3** = Bastante | **4** = Mucho
-                    """)
-                    respuestas_lsb = {}
-                    with st.form("form_lsb50"):
-                        for idx, preg in enumerate(ITEMS_LSB50, 1):
-                            respuestas_lsb[f"p_{idx}"] = st.radio(
-                                preg, options=list(OPCIONES_LSB50.keys()),
-                                format_func=lambda x: OPCIONES_LSB50[x], horizontal=True, key=f"lsb_{idx}"
-                            )
-                            st.divider()
-                        if st.form_submit_button("Finalizar y Enviar LSB-50", use_container_width=True):
-                            datos_token["evaluaciones"]["LSB-50"] = respuestas_lsb
-                            guardar_token_db(token_actual, datos_token)
-                            st.session_state["test_enviado"] = True
-                            st.rerun()
+                col_datos, col_boton = st.columns([3, 1])
+                with col_datos:
+                    st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Hora (BA): **{hora_str}** | Hash: `{persona['hash_seguridad'][:10]}...`")
+                with col_boton:
+                    if st.button("🔴 Finalizar y Salir", use_container_width=True):
+                        # MEJORA IMPLEMENTADA: Marcar token como finalizado en la BD para impedir reingreso
+                        datos_token["estado"] = "finalizado"
+                        guardar_token_db(token_actual, datos_token)
+                        
+                        del st.session_state["token_activo"]
+                        st.query_params.clear()
+                        st.rerun()
 
-                # B) MMPI-2-RF
-                elif test_seleccionado == "MMPI-2-RF (Inventario Multifásico de Personalidad)":
-                    st.subheader("MMPI-2-RF")
-                    st.info("Marque **Verdadero** o **Falso** según corresponda a su caso habitual.")
-                    respuestas_mmpi = {}
-                    with st.form("form_mmpi2rf"):
-                        for idx, preg in enumerate(ITEMS_MMPI2RF, 1):
-                            respuestas_mmpi[f"p_{idx}"] = st.radio(
-                                preg, options=OPCIONES_MMPI, horizontal=True, key=f"mmpi_{idx}"
-                            )
-                            st.divider()
-                        if st.form_submit_button("Finalizar y Enviar MMPI-2-RF", use_container_width=True):
-                            datos_token["evaluaciones"]["MMPI-2-RF"] = respuestas_mmpi
-                            guardar_token_db(token_actual, datos_token)
-                            st.session_state["test_enviado"] = True
-                            st.rerun()
+                if st.session_state.get("test_enviado"):
+                    st.success("¡Escala enviada y registrada con éxito bajo cadena de custodia digital!")
+                    st.write("Sus respuestas han sido almacenadas de manera segura para el perito.")
+                    st.divider()
+                    if st.button("🏠 Completar otra escala / Volver al menú", type="primary", use_container_width=True):
+                        st.session_state["test_enviado"] = False
+                        st.rerun()
+                else:
+                    if evaluaciones_realizadas:
+                        st.write("✅ **Escalas completadas hasta el momento:** " + ", ".join(list(evaluaciones_realizadas.keys())))
+                    
+                    test_seleccionado = st.selectbox(
+                        "Seleccione la escala a completar:",
+                        [
+                            "-- Seleccione una opción --", 
+                            "Listado de Síntomas Breve (LSB-50)", 
+                            "MMPI-2-RF (Inventario Multifásico de Personalidad)",
+                            "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)",
+                            "STAI (Cuestionario de Ansiedad Estado-Rasgo)",
+                            "BDI-II (Inventario de Depresión de Beck)"
+                        ]
+                    )
+                    
+                    # A) LSB-50
+                    if test_seleccionado == "Listado de Síntomas Breve (LSB-50)":
+                        st.subheader("Listado de Síntomas Breve (LSB-50)")
+                        st.info("""
+                        **Instrucciones oficiales:**
+                        A continuación se presenta una lista de molestias, problemas o síntomas psicológicos y físicos. Lea cada uno detenidamente y señale hasta qué punto le ha preocupado o molestado **DURANTE LAS ÚLTIMAS DOS SEMANAS, INCLUYENDO EL DÍA DE HOY**.
+                        * **0** = Nada | **1** = Algo | **2** = Moderadamente | **3** = Bastante | **4** = Mucho
+                        """)
+                        respuestas_lsb = {}
+                        with st.form("form_lsb50"):
+                            for idx, preg in enumerate(ITEMS_LSB50, 1):
+                                respuestas_lsb[f"p_{idx}"] = st.radio(
+                                    preg, options=list(OPCIONES_LSB50.keys()),
+                                    format_func=lambda x: OPCIONES_LSB50[x], horizontal=True, key=f"lsb_{idx}"
+                                )
+                                st.divider()
+                            if st.form_submit_button("Finalizar y Enviar LSB-50", use_container_width=True):
+                                datos_token["evaluaciones"]["LSB-50"] = respuestas_lsb
+                                guardar_token_db(token_actual, datos_token)
+                                st.session_state["test_enviado"] = True
+                                st.rerun()
 
-                # C) CUIDA
-                elif test_seleccionado == "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)":
-                    st.subheader("Cuestionario CUIDA")
-                    st.info("Elija la alternativa de 1 a 4 según su grado de acuerdo.")
-                    respuestas_cuida = {}
-                    with st.form("form_cuida"):
-                        for idx, preg in enumerate(ITEMS_CUIDA, 1):
-                            respuestas_cuida[f"p_{idx}"] = st.radio(
-                                preg, options=list(OPCIONES_CUIDA.keys()),
-                                format_func=lambda x: OPCIONES_CUIDA[x], horizontal=True, key=f"cuida_{idx}"
-                            )
-                            st.divider()
-                        if st.form_submit_button("Finalizar y Enviar CUIDA", use_container_width=True):
-                            datos_token["evaluaciones"]["CUIDA"] = respuestas_cuida
-                            guardar_token_db(token_actual, datos_token)
-                            st.session_state["test_enviado"] = True
-                            st.rerun()
+                    # B) MMPI-2-RF
+                    elif test_seleccionado == "MMPI-2-RF (Inventario Multifásico de Personalidad)":
+                        st.subheader("MMPI-2-RF")
+                        st.info("Marque **Verdadero** o **Falso** según corresponda a su caso habitual.")
+                        respuestas_mmpi = {}
+                        with st.form("form_mmpi2rf"):
+                            for idx, preg in enumerate(ITEMS_MMPI2RF, 1):
+                                respuestas_mmpi[f"p_{idx}"] = st.radio(
+                                    preg, options=OPCIONES_MMPI, horizontal=True, key=f"mmpi_{idx}"
+                                )
+                                st.divider()
+                            if st.form_submit_button("Finalizar y Enviar MMPI-2-RF", use_container_width=True):
+                                datos_token["evaluaciones"]["MMPI-2-RF"] = respuestas_mmpi
+                                guardar_token_db(token_actual, datos_token)
+                                st.session_state["test_enviado"] = True
+                                st.rerun()
 
-                # D) STAI
-                elif test_seleccionado == "STAI (Cuestionario de Ansiedad Estado-Rasgo)":
-                    st.subheader("STAI - Cuestionario de Ansiedad Estado-Rasgo")
-                    st.info("Ítems 1-20 (Estado - Ahora mismo) | Ítems 21-40 (Rasgo - En general)")
-                    respuestas_stai = {}
-                    with st.form("form_stai"):
-                        for idx, preg in enumerate(ITEMS_STAI, 1):
-                            respuestas_stai[f"p_{idx}"] = st.radio(
-                                preg, options=list(OPCIONES_STAI.keys()),
-                                format_func=lambda x: OPCIONES_STAI[x], horizontal=True, key=f"stai_{idx}"
-                            )
-                            st.divider()
-                        if st.form_submit_button("Finalizar y Enviar STAI", use_container_width=True):
-                            datos_token["evaluaciones"]["STAI"] = respuestas_stai
-                            guardar_token_db(token_actual, datos_token)
-                            st.session_state["test_enviado"] = True
-                            st.rerun()
+                    # C) CUIDA
+                    elif test_seleccionado == "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)":
+                        st.subheader("Cuestionario CUIDA")
+                        st.info("Elija la alternativa de 1 a 4 según su grado de acuerdo.")
+                        respuestas_cuida = {}
+                        with st.form("form_cuida"):
+                            for idx, preg in enumerate(ITEMS_CUIDA, 1):
+                                respuestas_cuida[f"p_{idx}"] = st.radio(
+                                    preg, options=list(OPCIONES_CUIDA.keys()),
+                                    format_func=lambda x: OPCIONES_CUIDA[x], horizontal=True, key=f"cuida_{idx}"
+                                )
+                                st.divider()
+                            if st.form_submit_button("Finalizar y Enviar CUIDA", use_container_width=True):
+                                datos_token["evaluaciones"]["CUIDA"] = respuestas_cuida
+                                guardar_token_db(token_actual, datos_token)
+                                st.session_state["test_enviado"] = True
+                                st.rerun()
 
-                # E) BDI-II
-                elif test_seleccionado == "BDI-II (Inventario de Depresión de Beck)":
-                    st.subheader("BDI-II - Inventario de Depresión de Beck")
-                    st.info("Seleccione la frase que mejor describa cómo se ha sentido durante las últimas dos semanas.")
-                    respuestas_bdi = {}
-                    with st.form("form_bdii"):
-                        for idx, item in enumerate(ITEMS_BDI, 1):
-                            respuestas_bdi[f"p_{idx}"] = st.radio(
-                                item["titulo"], options=item["opciones"], key=f"bdi_{idx}"
-                            )
-                            st.divider()
-                        if st.form_submit_button("Finalizar y Enviar BDI-II", use_container_width=True):
-                            datos_token["evaluaciones"]["BDI-II"] = respuestas_bdi
-                            guardar_token_db(token_actual, datos_token)
-                            st.session_state["test_enviado"] = True
-                            st.rerun()
+                    # D) STAI
+                    elif test_seleccionado == "STAI (Cuestionario de Ansiedad Estado-Rasgo)":
+                        st.subheader("STAI - Cuestionario de Ansiedad Estado-Rasgo")
+                        st.info("Ítems 1-20 (Estado - Ahora mismo) | Ítems 21-40 (Rasgo - En general)")
+                        respuestas_stai = {}
+                        with st.form("form_stai"):
+                            for idx, preg in enumerate(ITEMS_STAI, 1):
+                                respuestas_stai[f"p_{idx}"] = st.radio(
+                                    preg, options=list(OPCIONES_STAI.keys()),
+                                    format_func=lambda x: OPCIONES_STAI[x], horizontal=True, key=f"stai_{idx}"
+                                )
+                                st.divider()
+                            if st.form_submit_button("Finalizar y Enviar STAI", use_container_width=True):
+                                datos_token["evaluaciones"]["STAI"] = respuestas_stai
+                                guardar_token_db(token_actual, datos_token)
+                                st.session_state["test_enviado"] = True
+                                st.rerun()
+
+                    # E) BDI-II
+                    elif test_seleccionado == "BDI-II (Inventario de Depresión de Beck)":
+                        st.subheader("BDI-II - Inventario de Depresión de Beck")
+                        st.info("Seleccione la frase que mejor describa cómo se ha sentido durante las últimas dos semanas.")
+                        respuestas_bdi = {}
+                        with st.form("form_bdii"):
+                            for idx, item in enumerate(ITEMS_BDI, 1):
+                                respuestas_bdi[f"p_{idx}"] = st.radio(
+                                    item["titulo"], options=item["opciones"], key=f"bdi_{idx}"
+                                )
+                                st.divider()
+                            if st.form_submit_button("Finalizar y Enviar BDI-II", use_container_width=True):
+                                datos_token["evaluaciones"]["BDI-II"] = respuestas_bdi
+                                guardar_token_db(token_actual, datos_token)
+                                st.session_state["test_enviado"] = True
+                                st.rerun()
