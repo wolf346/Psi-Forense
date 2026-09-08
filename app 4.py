@@ -1,4 +1,3 @@
-name=app 6.1 hash ip_3.py
 import streamlit as st
 import random
 import string
@@ -298,7 +297,7 @@ ITEMS_CUIDA = [
     "1. Tengo problemas para dormir.", "2. Estoy satisfecho de cómo soy.", "3. Si alguien me insulta intento averiguar por qué lo hace.",
     "4. A veces juzgo a los demás sin conocerles.", "5. Me disgusta mi aspecto físico.", "6. Tengo cambios de humor con bastante facilidad.",
     "7. Me gusta reunirme con mis amigos y conversar.", "8. Siempre hago lo que digo.", "9. Hago todo lo posible por salirme con la mía.",
-    "10. Me cuesta mucho participar en reuniones de grupo.", "11. Ya no me resulta doloroso pensar en las cosas a las que he tenido que renunciar con los años.",
+    "10. Me cuesta mucho participar en reuniones de grupo.", "11. Ya no me resulta doloroso pensar en las cosas a las que he tenido que renunciar com los años.",
     "12. Cuando voy de viaje evito relacionarme con otros viajeros.", "13. Me cuesta aceptar que mi relación de pareja no sea como al principio.",
     "14. Me altero fácilmente cuando algo inesperado perturba mi vida cotidiana.", "15. Los sentimientos de los demás no me preocupan.",
     "16. Abandono fácilmente las tareas cuando me encuentro con ciertas dificultades.", "17. Me pongo nervioso cuando alguien me halaga.",
