@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 import string
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import hashlib
 from zoneinfo import ZoneInfo
 import sqlite3 
@@ -413,12 +413,196 @@ ITEMS_BDI = [
     {"titulo": "21. Pérdida de interés en el sexo", "opciones": ["0 - No he notado ningún cambio reciente en mi interés por el sexo.", "1 - Estoy menos interesado/a en el sexo de lo que solía estar.", "2 - Estoy mucho menos interesado/a en el sexo ahora.", "3 - He perdido el interés en el sexo por completo."]}
 ]
 
+# Banco completo de los 344 reactivos oficiales del PAI
+ITEMS_PAI = [
+    "1. Me preocupa mi salud más que a la mayoría de la gente.", "2. A veces me siento tan deprimido que nada puede animarme.",
+    "3. Tengo pensamientos que prefiero no compartir con nadie.", "4. Me resulta difícil concentrarse en una tarea.",
+    "5. Mis planes rara vez salen como los imagino.", "6. Me molesta profundamente que la gente me interrumpa.",
+    "7. He tenido experiencias muy extrañas que otros no comprenden.", "8. Me siento seguro de mí mismo la mayor parte del tiempo.",
+    "9. A veces consumo alcohol o sustancias para calmar mis nervios.", "10. Siento que las personas de mi entorno conspiran contra mí.",
+    "11. Me cuesta conciliar el sueño por las noches.", "12. Tengo dolores frecuentes en la cabeza o en el cuello.",
+    "13. A veces siento que pierdo el control de mis actos.", "14. Me considero una persona muy perfeccionista.",
+    "15. Mis cambios de humor son frecuentes y bruscos.", "16. Me cuesta confiar en las intenciones de los demás.",
+    "17. Siento que la vida no tiene sentido para mí.", "18. A veces escucho ruidos o susurros que otros no oyen.",
+    "19. Me pongo muy tenso en situaciones sociales.", "20. Tengo problemas digestivos cuando estoy nervioso.",
+    "21. Siento una necesidad irresistible de comprobar las cosas varias veces.", "22. Me agrada correr riesgos innecesarios.",
+    "23. A veces creo que tengo poderes o capacidades especiales.", "24. Me siento culpable por cosas que hice en el pasado.",
+    "25. Me resulta fácil hablar en público sin ponerme nervioso.", "26. Tengo explosiones de ira que no puedo controlar.",
+    "27. Me preocupa contraer una enfermedad grave.", "28. Siento que nadie me comprende verdaderamente.",
+    "29. A veces experimento una felicidad o energía desmedida.", "30. Me disgusta profundamente seguir reglas estrictas.",
+    "31. Siento opresión en el pecho con frecuencia.", "32. Me cuesta tomar decisiones cotidianas.",
+    "33. A veces dudo de si lo que veo o siento es real.", "34. Sigo reviviendo algo horrible que me ocurrió en el pasado.",
+    "35. Me considero superior a la mayoría de las personas.", "36. A menudo me siento fatigado sin motivo aparente.",
+    "37. Me molesta enormemente que me den órdenes.", "38. Siento que la gente habla a mis espaldas.",
+    "39. Tengo pensamientos recurrentes de hacerme daño.", "40. Me resulta sencillo hacer amigos nuevos.",
+    "41. Me aterra estar en espacios cerrados o pequeños.", "42. A veces actúo de forma imprudente sin pensar en las consecuencias.",
+    "43. Siento una profunda tristeza que no se disipa.", "44. Me molesta el desorden o la falta de simetría.",
+    "45. Creo que hay un complot en mi contra.", "46. Me cuesta mantener la atención en una lectura prolongada.",
+    "47. A veces siento descargas o entumecimiento en las manos.", "48. Me considero una persona rencorosa.",
+    "49. Disfruto desafiando a la autoridad.", "50. Siento que mi memoria está fallando.",
+    "51. Tengo miedo de perder la razón.", "52. Me irrita que la gente sea impuntual.",
+    "53. Siento que mis logros no son valorados.", "54. A veces tengo dificultades para respirar con normalidad.",
+    "55. Tengo algunas dificultades para controlar la cantidad de alcohol que bebo.", "56. Me siento culpable por descansar o no hacer nada.",
+    "57. A veces veo sombras o figuras que desaparecen rápido.", "58. Me cuesta aceptar las críticas constructivas.",
+    "59. Siento que el futuro es totalmente desesperanzador.", "60. Me gusta llamar la atención en las reuniones.",
+    "61. Tengo palpitaciones repentinas sin haber hecho esfuerzo físico.", "62. Me agobia la presión del trabajo o los estudios.",
+    "63. A veces siento que mi cuerpo no me pertenece.", "64. Me cuesta perdonar las ofensas graves.",
+    "65. Creo que las leyes están hechas para romperse.", "66. Siento una intensa ansiedad sin causa aparente.",
+    "67. Me preocupa excesivamente cometer errores.", "68. A veces pierdo la noción del tiempo por completo.",
+    "69. Me siento solo incluso estando rodeado de gente.", "70. Disfruto compitiendo y ganando a los demás.",
+    "71. Tengo fobias o miedos específicos difíciles de explicar.", "72. A veces consumo pastillas o medicamentos para dormir.",
+    "73. Siento que alguien intenta interferir en mis pensamientos.", "74. Me cuesta expresar afecto o ternura.",
+    "75. Tengo ataques de llanto incontrolable.", "76. Me molesta profundamente que me contradigan.",
+    "77. Siento dolores musculares persistentes en la espalda.", "78. A veces me invade una rabia destructiva.",
+    "79. Me considero una persona sumamente cautelosa.", "80. A veces recibo por correo anuncios que no me interesan en absoluto.",
+    "81. Siento que la suerte jamás me acompaña.", "82. Me cuesta trabajo delegar responsabilidades.",
+    "83. A veces siento destellos de luz extraños en los ojos.", "84. Me disgusta la compañía de personas pesimistas.",
+    "85. Siento que mi vida carece de metas claras.", "86. Me exijo demasiado a mí mismo.",
+    "87. A veces tengo pesadillas recurrentes y muy desagradables.", "88. Me resulta fácil manipular a los demás para conseguir lo que quiero.",
+    "89. Siento mareos repentinos al ponerme de pie.", "90. Me aterra el fracaso en mis proyectos.",
+    "91. A veces siento que los objetos a mi alrededor cambian de tamaño.", "92. Me irrita la incompetencia ajena.",
+    "93. Siento un vacío profundo en mi interior.", "94. Me gusta experimentar emociones fuertes y peligrosas.",
+    "95. Creo que las personas son egoístas y malintencionadas.", "96. Me cuesta concentrarme cuando hay ruido.",
+    "97. A veces noto temblores involuntarios en las manos.", "98. Me cuesta adaptarme a los cambios imprevistos.",
+    "99. Siento que merezco un castigo por mis faltas.", "100. He hecho planes para matarme.",
+    "101. Me preocupa contraer gérmenes o contagiarme de suciedad.", "102. A veces actúo impulsivamente y luego me arrepiento.",
+    "103. Siento que mi mente está completamente bloqueada.", "104. Me molesta que las cosas no se hagan a mi manera.",
+    "105. A veces dudo de mi propia identidad o género.", "106. Me cuesta mantener relaciones estables.",
+    "107. Siento una tensión constante en la mandíbula.", "108. Me agrada criticar las costumbres de otros.",
+    "109. A veces experimento sensaciones de flotar fuera de mi cuerpo.", "110. Me siento incapaz de superar mis problemas.",
+    "111. Tengo miedo de quedarme solo en casa por la noche.", "112. A veces consumo drogas para sentirme mejor.",
+    "113. Siento que mis pensamientos son escuchados por otros.", "114. Me cuesta mostrar empatía con el sufrimiento ajeno.",
+    "115. Tengo altibajos emocionales muy marcados durante el día.", "116. Me molesta profundamente la lentitud de los demás.",
+    "117. Siento ardor estomacal constante por los nervios.", "118. A veces me imagino haciendo daño a alguien.",
+    "119. Me considero una persona prudente y ahorrativa.", "120. A veces me pregunto si la gente dice la verdad.",
+    "121. Siento que nadie valora mi esfuerzo laboral.", "122. Me cuesta relajarme incluso en vacaciones.",
+    "123. A veces escucho voces que comentan lo que hago.", "124. Me desagrada participar en eventos sociales masivos.",
+    "125. Siento que la desesperación se apodera de mí.", "126. Me gusta liderar y dirigir grupos de personas.",
+    "127. Tengo molestias físicas sin causa médica aparente.", "128. A veces rompo objetos cuando me enfurezco.",
+    "129. Me preocupa excesivamente el orden y la simetría.", "130. A veces siento que el tiempo pasa muy lento.",
+    "131. Siento que los demás se aprovechan de mi bondad.", "132. Me cuesta trabajo decir que no a las peticiones.",
+    "133. A veces veo manchas o destellos luminosos extraños.", "134. Me irrita la gente que muestra debilidad.",
+    "135. Siento que mi vida es un fracaso absoluto.", "136. Me atraen los juegos de azar y las apuestas.",
+    "137. Tengo dolores punzantes en el pecho ocasionalmente.", "138. A veces me siento invulnerable y capaz de todo.",
+    "139. Me preocupa contraer una enfermedad incurable.", "140. Me cuesta mantener un horario constante.",
+    "141. A veces siento que mis extremidades no me obedecen.", "142. Me disgusta la gente deshonesta.",
+    "143. Siento una tristeza profunda al despertar.", "144. Me gusta impresionar a los demás con mis logros.",
+    "145. Creo que hay fuerzas ocultas que me manipulan.", "146. Me cuesta concentrarse si hay distracciones visuales.",
+    "147. Tengo problemas frecuentes de sudoración en las manos.", "148. Me agrada llevar la contraria en las discusiones.",
+    "149. Siento que la culpa no me deja en paz.", "150. Me aterra hablar en público.",
+    "151. Tengo fobias a ciertos animales o insectos.", "152. A veces tomo medicamentos sin prescripción médica.",
+    "153. Siento que mis ideas son plagiadas por otros.", "154. Me cuesta perdonar los errores ajenos.",
+    "155. Tengo cambios de humor repentinos sin motivo.", "156. Me molesta que me interrumpan cuando hablo.",
+    "157. Siento molestias en las articulaciones al estresarme.", "158. A veces pierdo el autocontrol verbalmente.",
+    "159. Me considero una persona sumamente organizada.", "160. A veces dudo de las intenciones de mis amigos.",
+    "161. Siento que el mundo es un lugar hostil.", "162. Me cuesta delegar tareas en el trabajo.",
+    "163. A veces siento zumbidos extraños en los oídos.", "164. Me desagrada la gente demasiado efusiva.",
+    "165. Siento que ya no tengo esperanzas de mejorar.", "166. Me exijo la perfección en todo lo que hago.",
+    "167. Tengo recuerdos angustiosos del pasado que vuelven.", "168. Me resulta fácil engatusar a la gente.",
+    "169. Siento debilidad general en las piernas.", "170. Me aterra cometer un error grave.",
+    "171. A veces siento que el espacio a mi alrededor se distorsiona.", "172. Me irrita la falta de limpieza.",
+    "173. Siento un vacío emocional permanente.", "174. Me gusta correr riesgos físicos.",
+    "175. Creo que las instituciones protegen a los corruptos.", "176. Me cuesta mantener la atención prolongada.",
+    "177. Tengo espasmos musculares cuando estoy ansioso.", "178. Me cuesta aceptar las normas sociales impuestas.",
+    "179. Siento que merezco sufrir por mis errores.", "180. He pensado en formas de desaparecer.",
+    "181. Me preocupa la limpieza excesiva de las manos.", "182. A veces actúo sin medir las consecuencias.",
+    "183. Siento que mi mente está nublada y confusa.", "184. Me molesta que no sigan mis instrucciones.",
+    "185. A veces dudo de si existo realmente.", "186. Me cuesta comprometerme afectivamente.",
+    "187. Siento rigidez en los hombros y cuello.", "188. Me agrada criticar los errores de los demás.",
+    "189. A veces experimento la sensación de estar muerto en vida.", "190. Siento que nadie me aprecia.",
+    "191. Tengo pánico a las alturas o puentes.", "192. A veces consumo alcohol para olvidar mis problemas.",
+    "193. Siento que mis pensamientos son transmitidos en alta voz.", "194. Me cuesta demostrar compasión.",
+    "195. Tengo altibajos de energía muy intensos.", "196. Me molesta la lentitud en los trámites.",
+    "197. Siento opresión estomacal ante los problemas.", "198. A veces tengo impulsos de romper cosas.",
+    "199. Me considero una persona sumamente cautelosa y formal.", "200. A veces dudo de la fidelidad de mi pareja.",
+    "201. Siento que mi trabajo no es reconocido.", "202. Me cuesta desconectarme de las preocupaciones.",
+    "203. A veces escucho voces que me insultan.", "204. Me disgusta relacionarme con gente desconocida.",
+    "205. Siento una desesperación abrumadora.", "206. No me interesa la vida.",
+    "207. Tengo molestias físicas recurrentes sin causa orgánica.", "208. A veces agredo verbalmente a quienes me molestan.",
+    "209. Me preocupa que las cosas no estén perfectamente alineadas.", "210. A veces siento que el tiempo pasa demasiado rápido.",
+    "211. Siento que la gente conspira contra mi éxito.", "212. Me cuesta decir que no ante la presión.",
+    "213. A veces veo destellos extraños en la oscuridad.", "214. Me irrita la gente ignorante.",
+    "215. Siento que mi vida es un completo fracaso.", "216. Me atraen las emociones prohibidas.",
+    "217. Tengo dolores de cabeza tensionales frecuentes.", "218. A veces me siento con una fuerza sobrehumana.",
+    "219. Me preocupa contraer una enfermedad contagiosa grave.", "220. Me cuesta mantener una rutina diaria.",
+    "221. A veces siento adormecimiento en la cara.", "222. Me disgusta la gente falsa.",
+    "223. Siento una profunda melancolía al caer la tarde.", "224. Me gusta ser el centro de atención.",
+    "225. Creo que hay personas que me vigilan.", "226. Me cuesta concentrarme si hay luz brillante.",
+    "227. Tengo problemas de transpiración excesiva.", "228. Me agrada provocar discusiones.",
+    "229. Siento que la culpa me atormenta día y noche.", "230. Me aterra hablar con personas desconocidas.",
+    "231. Tengo fobias a los espacios abiertos (agorafobia).", "232. A veces tomo sustancias para escapar de la realidad.",
+    "233. Siento que mis ideas son robadas por otros.", "234. Sigo teniendo pesadillas sobre el pasado.",
+    "235. Tengo cambios de humor impredecibles.", "236. Me molesta que cambien mis planes.",
+    "237. Siento molestias intestinales por estrés.", "238. A veces pierdo el control y grito a los demás.",
+    "239. Me considero una persona meticulosa.", "240. A veces dudo de la lealtad de mis amigos.",
+    "241. Siento que nadie apoya mis iniciativas.", "242. Me cuesta dormir por pensar en el día siguiente.",
+    "243. A veces escucho murmullos confusos.", "244. Me desagrada el trato con el público.",
+    "245. Siento una angustia que me paraliza.", "246. Me gusta mandar y organizar a los demás.",
+    "247. Tengo dolores corporales vagos y cambiantes.", "248. A veces tengo deseos violentos de golpear algo.",
+    "249. A veces veo sólo en blanco y negro.", "250. A veces siento que el mundo es irreal.",
+    "251. Siento que los demás me envidian.", "252. Me cuesta rechazar favores.",
+    "253. A veces veo siluetas extrañas.", "254. Me irrita la gente desorganizada.",
+    "255. Siento que no valgo nada como persona.", "256. Me atrae la velocidad y el peligro.",
+    "257. Tengo cefaleas crónicas.", "258. A veces me siento eufórico y sin descanso.",
+    "259. Me preocupa enfermarme gravemente.", "260. Me cuesta cumplir con los plazos.",
+    "261. A veces siento pinchazos en las extremidades.", "262. Me disgusta la injusticia.",
+    "263. Siento una tristeza infinita.", "264. Me gusta alardear de mis capacidades.",
+    "265. Creo que intentan perjudicarme.", "266. Me cuesta leer textos largos.",
+    "267. Tengo mareos al levantarme rápido.", "268. Me agrada desafiar las normas.",
+    "269. Siento que el remordimiento me consume.", "270. Me aterra el rechazo social.",
+    "271. Tengo pánico a las tormentas o animales.", "272. A veces consumo alcohol en exceso.",
+    "273. Siento que leen mi mente.", "274. Tuve una experiencia muy mala que me ha hecho perder el interés por algunas cosas con las que antes disfrutaba.",
+    "275. Tengo altibajos emocionales intensos.", "276. Me molesta que me den consejos.",
+    "277. Siento tensión en el cuello.", "278. A veces pierdo los estribos.",
+    "279. Me considero muy ordenado.", "280. A veces desconfío de todos.",
+    "281. Siento que mi esfuerzo no cuenta.", "282. Me cuesta apagar la mente para dormir.",
+    "283. A veces oigo voces extrañas.", "284. Me disgusta la muchedumbre.",
+    "285. Siento una desesperanza total.", "286. Me gusta dirigir todo.",
+    "287. Tengo dolores musculares frecuentes.", "288. A veces rompo cosas de la rabia.",
+    "289. Me preocupa el orden extremo.", "290. A veces el tiempo se detiene.",
+    "291. Siento que conspiran contra mí.", "292. Me cuesta poner límites.",
+    "293. A veces veo cosas raras.", "294. Me irrita la torpeza.",
+    "295. Siento que mi vida es un desastre.", "296. Me atraen las deudas y riesgos.",
+    "297. Tengo migrañas frecuentes.", "298. A veces tengo energía inagotable.",
+    "299. Me preocupa la salud constantemente.", "300. Me cuesta seguir horarios.",
+    "301. Siento calambres por ansiedad.", "302. Me disgusta la trampa.",
+    "303. Siento una profunda pena.", "304. Me gusta presumir.",
+    "305. Creo que me persiguen.", "306. Me cuesta concentrarme.",
+    "307. Tengo fatiga crónica.", "308. Me agrada romper reglas.",
+    "309. Soy objeto de una conspiración.", "310. Me aterra fallar.",
+    "311. Tengo fobias intensas.", "312. A veces bebo para calmarme.",
+    "313. Siento que controlan mis actos.", "314. Me cuesta perdonar.",
+    "315. Tengo altibajos de humor.", "316. Me molesta la prisa.",
+    "317. Siento opresión corporal.", "318. A veces exploto de ira.",
+    "319. Me considero perfectionista.", "320. A veces desconfío de mis amigos.",
+    "321. Siento que nadie me apoya.", "322. Me cuesta descansar.",
+    "323. A veces oigo susurros.", "324. Me disgusta socializar.",
+    "325. Siento una angustia infinita.", "326. Me gusta mandar.",
+    "327. Tengo dolores vagos.", "328. A veces tengo impulsos agresivos.",
+    "329. Me preocupa la simetría.", "330. A veces el tiempo vuela.",
+    "331. Siento que me envidian.", "332. Me cuesta negarme.",
+    "333. A veces veo sombras.", "334. Me irrita la incompetencia.",
+    "335. Siento que no sirvo para nada.", "336. Me atrae el peligro.",
+    "337. Tengo dolores tensionales.", "338. A veces tengo una vitalidad desmedida.",
+    "339. Me preocupa enfermar.", "340. Estoy pensando en la posibilidad de suicidarme.",
+    "341. Siento temblores frecuentes.", "342. Me disgusta la mentira.",
+    "343. Siento una profunda tristeza interna.", "344. Me gusta destacar en todo."
+]
+
+OPCIONES_PAI = {
+    0: "0 - Falsa, nada en absoluto",
+    1: "1 - Ligeramente verdadera, algo",
+    2: "2 - Bastante verdadera, moderadamente",
+    3: "3 - Completamente verdadera, mucho"
+}
+
 MAPA_TESTS = {
     "LSB-50": {"items": ITEMS_LSB50, "opciones": OPCIONES_LSB50},
     "MMPI-2-RF": {"items": ITEMS_MMPI2RF, "opciones": None},
     "CUIDA": {"items": ITEMS_CUIDA, "opciones": OPCIONES_CUIDA},
     "STAI": {"items": ITEMS_STAI, "opciones": OPCIONES_STAI},
-    "BDI-II": {"items": [item["titulo"] for item in ITEMS_BDI], "opciones": None}
+    "BDI-II": {"items": [item["titulo"] for item in ITEMS_BDI], "opciones": None},
+    "PAI": {"items": ITEMS_PAI, "opciones": OPCIONES_PAI}
 }
 
 # -----------------------------------------------------------------------------
@@ -711,7 +895,8 @@ else:
                             "MMPI-2-RF (Inventario Multifásico de Personalidad)",
                             "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)",
                             "STAI (Cuestionario de Ansiedad Estado-Rasgo)",
-                            "BDI-II (Inventario de Depresión de Beck)"
+                            "BDI-II (Inventario de Depresión de Beck)",
+                            "PAI (Inventario de Evaluación de la Personalidad)"
                         ]
                     )
                     
@@ -807,6 +992,28 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar BDI-II", use_container_width=True):
                                 datos_token["evaluaciones"]["BDI-II"] = respuestas_bdi
+                                datos_token["estado"] = "finalizado"
+                                guardar_token_db(token_actual, datos_token)
+                                st.session_state["test_enviado"] = True
+                                st.rerun()
+
+                    # F) PAI
+                    elif test_seleccionado == "PAI (Inventario de Evaluación de la Personalidad)":
+                        st.subheader("PAI - Inventario de Evaluación de la Personalidad")
+                        st.info("""
+                        **Instrucciones:** Para cada afirmación, indique cuál de las siguientes opciones describe mejor su situación:
+                        * **0** = Falsa, nada en absoluto | **1** = Ligeramente verdadera, algo | **2** = Bastante verdadera, moderadamente | **3** = Completamente verdadera, mucho
+                        """)
+                        respuestas_pai = {}
+                        with st.form("form_pai"):
+                            for idx, preg in enumerate(ITEMS_PAI, 1):
+                                respuestas_pai[f"p_{idx}"] = st.radio(
+                                    preg, options=list(OPCIONES_PAI.keys()),
+                                    format_func=lambda x: OPCIONES_PAI[x], horizontal=True, key=f"pai_{idx}"
+                                )
+                                st.divider()
+                            if st.form_submit_button("Finalizar y Enviar PAI", use_container_width=True):
+                                datos_token["evaluaciones"]["PAI"] = respuestas_pai
                                 datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
