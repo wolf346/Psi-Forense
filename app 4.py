@@ -1,3 +1,4 @@
+#[cite: 3]
 import streamlit as st
 import random
 import string
@@ -551,6 +552,7 @@ if st.session_state["perito_autenticado"]:
                     if persona:
                         st.write(f"**Nombre y Apellido:** {persona.get('nombre', 'N/A')}")
                         st.write(f"**Número de DNI:** {persona.get('dni', 'N/A')}")
+                        st.write(f"**Número de Teléfono:** {persona.get('telefono', 'N/A')}")
                         st.write(f"**Fecha y Hora (Buenos Aires):** {persona.get('fecha', 'N/A')} - {persona.get('hora', 'N/A')} hs")
                         st.write(f"**Hash de Identidad:** `{persona.get('hash_identidad', 'N/A')}`")
                     else:
@@ -651,10 +653,18 @@ else:
                     nombre_comp = st.text_input("Nombre y Apellido completo:", autocomplete="off")
                     dni_val = st.text_input("Número de DNI / Documento:", autocomplete="off")
                     
+                    st.markdown("Número de Teléfono (Celular):")
+                    col_pref, col_num = st.columns([1, 3])
+                    with col_pref:
+                        st.text_input("Prefijo", value="+54 9", disabled=True, label_visibility="collapsed")
+                    with col_num:
+                        tel_val = st.text_input("Número de teléfono (ej: 3421234567)", placeholder="3421234567", autocomplete="off", label_visibility="collapsed")
+                    
                     guardar_datos = st.form_submit_button("Generar Hash de Identidad y Acceder", use_container_width=True)
                     
                     if guardar_datos:
-                        if nombre_comp.strip() != "" and dni_val.strip() != "":
+                        telefono_completo = f"+54 9 {tel_val.strip()}" if tel_val.strip() != "" else ""
+                        if nombre_comp.strip() != "" and dni_val.strip() != "" and tel_val.strip() != "":
                             try:
                                 tz_ba = ZoneInfo("America/Argentina/Buenos_Aires")
                                 ahora_ba = datetime.now(tz_ba)
@@ -665,12 +675,13 @@ else:
                             fecha_eval = ahora_ba.strftime("%Y-%m-%d")
                             hora_eval = ahora_ba.strftime("%H:%M:%S")
                             
-                            str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{fecha_eval}-{hora_eval}-{ip_cliente}"
+                            str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{telefono_completo}-{fecha_eval}-{hora_eval}-{ip_cliente}"
                             hash_generado = hashlib.sha256(str_para_hash.encode('utf-8')).hexdigest()
                             
                             datos_token["datos_persona"] = {
                                 "nombre": nombre_comp.strip(),
                                 "dni": dni_val.strip(),
+                                "telefono": telefono_completo,
                                 "fecha": fecha_eval,
                                 "hora": hora_eval,
                                 "hash_identidad": hash_generado
@@ -682,7 +693,7 @@ else:
                             guardar_token_db(token_actual, datos_token)
                             st.rerun()
                         else:
-                            st.warning("Por favor complete sus Nombre, Apellido y DNI para poder avanzar.")
+                            st.warning("Por favor complete Nombre, Apellido, DNI y Teléfono para poder avanzar.")
             
             # PASO 3: Selección de Cuestionarios y Escalas
             else:
@@ -690,7 +701,7 @@ else:
                 hora_str = persona.get("hora", "N/A")
                 evaluaciones_realizadas = datos_token.get("evaluaciones", {})
                 
-                st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Hora (BA): **{hora_str}** | Hash Identidad: `{persona['hash_identidad'][:10]}...`")
+                st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Tel: **{persona.get('telefono', 'N/A')}** | Hora (BA): **{hora_str}** | Hash Identidad: `{persona['hash_identidad'][:10]}...`")
 
                 if st.session_state.get("test_enviado"):
                     st.success("¡Escala enviada y registrada bajo cadena de custodia digital inalterable!")
