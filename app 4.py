@@ -194,7 +194,7 @@ ITEMS_MMPI2RF = [
     "183. Disfruto coleccionar objetos.", "184. Siento opresión en la cabeza.", "185. Me cuesta expresar desacuerdo con los demás.",
     "186. A veces me cuesta reconocer a personas conocidas.", "187. Me siento satisfecho con mi apariencia.", "188. Siento que los demás son más astutos que yo.",
     "189. Tengo problemas al tragar alimentos.", "190. Me apasiona aprender idiomas.", "191. Me cuesta concentrarse cuando hay distracciones.",
-    "192. Siento que la culpa no me deja en paz.", "193. Me agrada hacer planes a largo plazo.", "194. Sufro de dolores de espalda punzantes.",
+    "192. Siento que la culpa no me deja en paz.", "193. Me agrada hacer plans a largo plazo.", "194. Sufro de dolores de espalda punzantes.",
     "195. Me cuesta trabajo decir que no.", "196. A veces imagino cosas que no son reales.", "197. Me siento motivado día a día.",
     "198. Siento que la competencia me abruma.", "199. Tengo acidez estomacal constante.", "200. Me gusta la jardinería.",
     "201. Me cuesta controlar mis pensamientos negativos.", "202. Siento que los demás se aprovechan de mí.", "203. Me agrada la soledad en su justa medida.",
@@ -462,7 +462,6 @@ if st.session_state["perito_autenticado"]:
             evals = info.get("evaluaciones", {})
             estado_token = info.get("estado", "activa")
             
-            # Distribución visual mejorada para incorporar el botón pericial de acceso directo
             col_texto, col_btn_ver, col_borrar = st.columns([4, 2, 1])
             with col_texto:
                 if estado_token == "finalizado":
@@ -500,7 +499,6 @@ if st.session_state["perito_autenticado"]:
                     eliminar_token_db(clave)
                     st.rerun()
 
-            # Despliegue en formato llano si el perito hace clic en el botón de ver
             if st.session_state.get(f"modal_ver_{clave}", False):
                 with st.container():
                     st.info(f"### 🛡️ Protocolo y Trazabilidad Forense - Token: `{clave}`")
@@ -580,23 +578,15 @@ else:
         claves_globales = cargar_datos_db()
         datos_token = claves_globales.get(token_actual, {"estado": "activa", "datos_persona": None, "evaluaciones": {}})
         
-        # Validar si el token fue invalidado externamente
         if datos_token.get("estado") == "finalizado":
             st.error("Este token ya ha sido finalizado. Su sesión ha caducado.")
             if st.button("Aceptar e ir al inicio", use_container_width=True):
                 del st.session_state["token_activo"]
                 st.rerun()
         else:
-            # PASO 2: Cargar Datos Personales, Fecha/Hora GMT Buenos Aires y Hash de seguridad
+            # PASO 2: Cargar Datos Personales
             if datos_token.get("datos_persona") is None:
-                col_info, col_salir = st.columns([4, 1])
-                with col_info:
-                    st.subheader("Datos del Evaluado y Registro de Identidad")
-                with col_salir:
-                    if st.button("🔴 Salir", use_container_width=True):
-                        del st.session_state["token_activo"]
-                        st.query_params.clear()
-                        st.rerun()
+                st.subheader("Datos del Evaluado y Registro de Identidad")
                 st.write("Por favor, complete sus datos filiatorios antes de acceder a las escalas:")
                 
                 with st.form("form_datos_personales"):
@@ -638,18 +628,8 @@ else:
                 hora_str = persona.get("hora", "N/A")
                 evaluaciones_realizadas = datos_token.get("evaluaciones", {})
                 
-                col_datos, col_boton = st.columns([3, 1])
-                with col_datos:
-                    st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Hora (BA): **{hora_str}** | Hash: `{persona['hash_seguridad'][:10]}...`")
-                with col_boton:
-                    if st.button("🔴 Finalizar y Salir", use_container_width=True):
-                        # MEJORA IMPLEMENTADA: Marcar token como finalizado en la BD para impedir reingreso
-                        datos_token["estado"] = "finalizado"
-                        guardar_token_db(token_actual, datos_token)
-                        
-                        del st.session_state["token_activo"]
-                        st.query_params.clear()
-                        st.rerun()
+                # Se eliminó el botón de la parte superior y se mantiene solo la información institucional limpia
+                st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Hora (BA): **{hora_str}** | Hash: `{persona['hash_seguridad'][:10]}...`")
 
                 if st.session_state.get("test_enviado"):
                     st.success("¡Escala enviada y registrada con éxito bajo cadena de custodia digital!")
@@ -692,6 +672,7 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar LSB-50", use_container_width=True):
                                 datos_token["evaluaciones"]["LSB-50"] = respuestas_lsb
+                                datos_token["estado"] = "finalizado"  # Cierra la clave al enviar la escala
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
@@ -709,6 +690,7 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar MMPI-2-RF", use_container_width=True):
                                 datos_token["evaluaciones"]["MMPI-2-RF"] = respuestas_mmpi
+                                datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
@@ -727,6 +709,7 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar CUIDA", use_container_width=True):
                                 datos_token["evaluaciones"]["CUIDA"] = respuestas_cuida
+                                datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
@@ -745,6 +728,7 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar STAI", use_container_width=True):
                                 datos_token["evaluaciones"]["STAI"] = respuestas_stai
+                                datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
@@ -762,6 +746,7 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar BDI-II", use_container_width=True):
                                 datos_token["evaluaciones"]["BDI-II"] = respuestas_bdi
+                                datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
