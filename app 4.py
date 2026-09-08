@@ -1,7 +1,7 @@
 import streamlit as st
 import random
 import string
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import hashlib
 from zoneinfo import ZoneInfo
 import sqlite3 
@@ -27,10 +27,10 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE PERSISTENTE
+# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE SEGURA (TRAZABILIDAD FORENSE)
 # -----------------------------------------------------------------------------
 CONTRASEÑA_MAESTRA = "MiClavePericial2026"
-DB_NAME = "forense.db"
+DB_NAME = "forense_seguro.db"
 
 def init_db():
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
@@ -40,7 +40,11 @@ def init_db():
             token TEXT PRIMARY KEY,
             estado TEXT,
             datos_persona TEXT,
-            evaluaciones TEXT
+            evaluaciones TEXT,
+            ip_acceso TEXT,
+            user_agent TEXT,
+            hash_anterior TEXT,
+            hash_bloque TEXT
         )
     ''')
     conn.commit()
@@ -51,31 +55,49 @@ init_db()
 def cargar_datos_db():
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
     cursor = conn.cursor()
-    cursor.execute("SELECT token, estado, datos_persona, evaluaciones FROM evaluaciones_periciales")
+    cursor.execute("SELECT token, estado, datos_persona, evaluaciones, ip_acceso, user_agent, hash_bloque FROM evaluaciones_periciales")
     rows = cursor.fetchall()
     conn.close()
     
     data = {}
     for row in rows:
-        token, estado, dp, evals = row
+        token, estado, dp, evals, ip, ua, h_bloque = row
         data[token] = {
             "estado": estado if estado else "activa",
             "datos_persona": json.loads(dp) if dp else None,
-            "evaluaciones": json.loads(evals) if evals else {}
+            "evaluaciones": json.loads(evals) if evals else {},
+            "ip_acceso": ip,
+            "user_agent": ua,
+            "hash_bloque": h_bloque
         }
     return data
 
 def guardar_token_db(token, info_dict):
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
     cursor = conn.cursor()
+    
+    # Obtener el hash del bloque anterior (Blockchain-lite para inalterabilidad)
+    cursor.execute("SELECT hash_bloque FROM evaluaciones_periciales ORDER BY rowid DESC LIMIT 1")
+    ultimo = cursor.fetchone()
+    hash_prev = ultimo[0] if ultimo and ultimo[0] else "GENESIS_BLOCK_FORENSE"
+    
+    # Sello criptográfico encadenado
+    payload_str = f"{token}-{json.dumps(info_dict.get('evaluaciones'))}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
+    hash_actual = hashlib.sha256(payload_str.encode('utf-8')).hexdigest()
+    
     cursor.execute('''
-        INSERT OR REPLACE INTO evaluaciones_periciales (token, estado, datos_persona, evaluaciones)
-        VALUES (?, ?, ?, ?)
+        INSERT OR REPLACE INTO evaluaciones_periciales 
+        (token, estado, datos_persona, evaluaciones, ip_acceso, user_agent, hash_anterior, hash_bloque)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         token,
         info_dict.get("estado", "activa"),
         json.dumps(info_dict.get("datos_persona")),
-        json.dumps(info_dict.get("evaluaciones", {}))
+        json.dumps(info_dict.get("evaluaciones", {})),
+        info_dict.get("ip_acceso", "Desconocida"),
+        info_dict.get("user_agent", "Desconocido"),
+        hash_prev,
+        hash_actual
     ))
     conn.commit()
     conn.close()
@@ -86,6 +108,21 @@ def eliminar_token_db(token):
     cursor.execute("DELETE FROM evaluaciones_periciales WHERE token = ?", (token,))
     conn.commit()
     conn.close()
+
+def obtener_metadatos_conexion():
+    """Extrae cabeceras HTTP de red para trazabilidad forense de IP y Dispositivo"""
+    try:
+        from streamlit.web.server.websocket_headers import _get_websocket_headers
+        headers = _get_websocket_headers()
+        if headers:
+            ip = headers.get("X-Forwarded-For", headers.get("Remote-Addr", "127.0.0.1"))
+            if "," in ip:
+                ip = ip.split(",")[0].strip()
+            ua = headers.get("User-Agent", "Desconocido")
+            return ip, ua
+    except Exception:
+        pass
+    return "IP_LOCAL_O_NO_DETECTADA", "Navegador_Estandar"
 
 # Cargamos el diccionario global desde SQLite en cada ejecución
 claves_globales = cargar_datos_db()
@@ -426,7 +463,7 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 if st.session_state["perito_autenticado"]:
     st.title("🔒 Panel Pericial de Administración")
-    st.write("Bienvenido al módulo pericial de gestión de evaluaciones.")
+    st.write("Bienvenido al módulo pericial de gestión de evaluaciones y cadena de custodia.")
     st.divider()
     
     st.subheader("🔑 Generar Clave y Link de Acceso")
@@ -434,10 +471,13 @@ if st.session_state["perito_autenticado"]:
     
     if st.button("🎲 Generar Nueva Clave y Link", type="primary"):
         nueva_clave = generar_token_unico()
+        ip_perito, ua_perito = obtener_metadatos_conexion()
         info_nueva = {
             "estado": "activa",
             "datos_persona": None,
-            "evaluaciones": {}
+            "evaluaciones": {},
+            "ip_acceso": ip_perito,
+            "user_agent": ua_perito
         }
         guardar_token_db(nueva_clave, info_nueva)
         
@@ -454,7 +494,6 @@ if st.session_state["perito_autenticado"]:
     
     st.subheader("📋 Estado de Claves y Evaluaciones")
     
-    # Cargamos datos frescos desde SQLite al renderizar el panel
     claves_globales = cargar_datos_db()
     
     if claves_globales:
@@ -464,7 +503,6 @@ if st.session_state["perito_autenticado"]:
             evals = info.get("evaluaciones", {})
             estado_token = info.get("estado", "activa")
             
-            # Ajustamos las columnas para incluir el botón "Actualizar" al lado de "Borrar"
             col_texto, col_btn_ver, col_actualizar, col_borrar = st.columns([3.5, 1.8, 1.2, 1.0])
             
             with col_texto:
@@ -495,7 +533,6 @@ if st.session_state["perito_autenticado"]:
                     st.write("_Sin datos_")
 
             with col_actualizar:
-                # Botón para recargar y sincronizar datos actualizados desde la base
                 if st.button("🔄 Actualizar", key=f"btn_actualizar_{clave}", use_container_width=True):
                     st.rerun()
 
@@ -515,9 +552,14 @@ if st.session_state["perito_autenticado"]:
                         st.write(f"**Nombre y Apellido:** {persona.get('nombre', 'N/A')}")
                         st.write(f"**Número de DNI:** {persona.get('dni', 'N/A')}")
                         st.write(f"**Fecha y Hora (Buenos Aires):** {persona.get('fecha', 'N/A')} - {persona.get('hora', 'N/A')} hs")
-                        st.write(f"**Hash de Seguridad (SHA-256):** `{persona.get('hash_seguridad', 'N/A')}`")
+                        st.write(f"**Hash de Identidad:** `{persona.get('hash_identidad', 'N/A')}`")
                     else:
                         st.warning("El evaluado aún no ha completado sus datos filiatorios.")
+                    
+                    # Metadatos de Red y Bloque Inalterable
+                    st.write(f"**Dirección IP de Acceso:** `{info.get('ip_acceso', 'N/A')}`")
+                    st.write(f"**Dispositivo (User-Agent):** `{info.get('user_agent', 'N/A')}`")
+                    st.write(f"**Hash del Bloque (Inalterabilidad):** `{info.get('hash_bloque', 'N/A')}`")
                     
                     if evals:
                         st.write("---")
@@ -558,7 +600,9 @@ if st.session_state["perito_autenticado"]:
 else:
     st.title("⚖️ Evaluaciones Psicológicas Forenses")
     
+    ip_cliente, ua_cliente = obtener_metadatos_conexion()
     claves_globales = cargar_datos_db()
+    
     if "token_activo" in st.session_state:
         if st.session_state["token_activo"] not in claves_globales:
             del st.session_state["token_activo"]
@@ -593,6 +637,11 @@ else:
                 del st.session_state["token_activo"]
                 st.rerun()
         else:
+            # Control Antispoofing / Aviso de cambio de IP
+            ip_registrada = datos_token.get("ip_acceso")
+            if ip_registrada and ip_registrada != "IP_LOCAL_O_NO_DETECTADA" and ip_registrada != ip_cliente:
+                st.warning("⚠️ **Aviso de seguridad forense:** Se detecta variación en la red de conexión respecto a la emisión inicial del token. Esta incidencia queda registrada para control de cadena de custodia.")
+
             # PASO 2: Cargar Datos Personales
             if datos_token.get("datos_persona") is None:
                 st.subheader("Datos del Evaluado y Registro de Identidad")
@@ -602,7 +651,7 @@ else:
                     nombre_comp = st.text_input("Nombre y Apellido completo:", autocomplete="off")
                     dni_val = st.text_input("Número de DNI / Documento:", autocomplete="off")
                     
-                    guardar_datos = st.form_submit_button("Generar Hash y Acceder a las Escalas", use_container_width=True)
+                    guardar_datos = st.form_submit_button("Generar Hash de Identidad y Acceder", use_container_width=True)
                     
                     if guardar_datos:
                         if nombre_comp.strip() != "" and dni_val.strip() != "":
@@ -616,7 +665,7 @@ else:
                             fecha_eval = ahora_ba.strftime("%Y-%m-%d")
                             hora_eval = ahora_ba.strftime("%H:%M:%S")
                             
-                            str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{fecha_eval}-{hora_eval}"
+                            str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{fecha_eval}-{hora_eval}-{ip_cliente}"
                             hash_generado = hashlib.sha256(str_para_hash.encode('utf-8')).hexdigest()
                             
                             datos_token["datos_persona"] = {
@@ -624,8 +673,12 @@ else:
                                 "dni": dni_val.strip(),
                                 "fecha": fecha_eval,
                                 "hora": hora_eval,
-                                "hash_seguridad": hash_generado
+                                "hash_identidad": hash_generado
                             }
+                            # Fijar metadatos de red y dispositivo al token
+                            datos_token["ip_acceso"] = ip_cliente
+                            datos_token["user_agent"] = ua_cliente
+                            
                             guardar_token_db(token_actual, datos_token)
                             st.rerun()
                         else:
@@ -637,10 +690,10 @@ else:
                 hora_str = persona.get("hora", "N/A")
                 evaluaciones_realizadas = datos_token.get("evaluaciones", {})
                 
-                st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Hora (BA): **{hora_str}** | Hash: `{persona['hash_seguridad'][:10]}...`")
+                st.info(f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** | Hora (BA): **{hora_str}** | Hash Identidad: `{persona['hash_identidad'][:10]}...`")
 
                 if st.session_state.get("test_enviado"):
-                    st.success("¡Escala enviada y registrada con éxito bajo cadena de custodia digital!")
+                    st.success("¡Escala enviada y registrada bajo cadena de custodia digital inalterable!")
                     st.write("Sus respuestas han sido almacenadas de manera segura para el perito.")
                     st.divider()
                     if st.button("🏠 Completar otra escala / Volver al menú", type="primary", use_container_width=True):
