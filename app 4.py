@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import sqlite3 
 import json
 
-# Configuración general de la página[cite: 7]
+# Configuración general de la página
 st.set_page_config(
     page_title="Evaluaciones Psicológicas Forenses", 
     page_icon="⚖️",
@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# OCULTAR MENÚ, FOOTER Y CABECERA DE STREAMLIT (GITHUB / SHARE)[cite: 7]
+# OCULTAR MENÚ, FOOTER Y CABECERA DE STREAMLIT (GITHUB / SHARE)
 # -----------------------------------------------------------------------------
 hide_streamlit_style = """
     <style>
@@ -27,7 +27,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE SEGURA (TRAZABILIDAD FORENSE)[cite: 7]
+# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE SEGURA (TRAZABILIDAD FORENSE)
 # -----------------------------------------------------------------------------
 CONTRASEÑA_MAESTRA = "MiClavePericial2026"
 DB_NAME = "forense_seguro.db"
@@ -76,12 +76,12 @@ def guardar_token_db(token, info_dict):
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
     cursor = conn.cursor()
     
-    # Obtener el hash del bloque anterior (Blockchain-lite para inalterabilidad)[cite: 7]
+    # Obtener el hash del bloque anterior (Blockchain-lite para inalterabilidad)
     cursor.execute("SELECT hash_bloque FROM evaluaciones_periciales ORDER BY rowid DESC LIMIT 1")
     ultimo = cursor.fetchone()
     hash_prev = ultimo[0] if ultimo and ultimo[0] else "GENESIS_BLOCK_FORENSE"
     
-    # Sello criptográfico encadenado[cite: 7]
+    # Sello criptográfico encadenado
     payload_str = f"{token}-{json.dumps(info_dict.get('evaluaciones'))}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
     hash_actual = hashlib.sha256(payload_str.encode('utf-8')).hexdigest()
     
@@ -110,7 +110,7 @@ def eliminar_token_db(token):
     conn.close()
 
 def obtener_metadatos_conexion():
-    """Extrae cabeceras HTTP de red para trazabilidad forense de IP y Dispositivo"""[cite: 7]
+    """Extrae cabeceras HTTP de red para trazabilidad forense de IP y Dispositivo"""
     try:
         from streamlit.web.server.websocket_headers import _get_websocket_headers
         headers = _get_websocket_headers()
@@ -124,7 +124,7 @@ def obtener_metadatos_conexion():
         pass
     return "IP_LOCAL_O_NO_DETECTADA", "Navegador_Estandar"
 
-# Cargamos el diccionario global desde SQLite en cada ejecución[cite: 7]
+# Cargamos el diccionario global desde SQLite en cada ejecución
 claves_globales = cargar_datos_db()
 
 if "perito_autenticado" not in st.session_state:
@@ -136,7 +136,7 @@ def generar_token_unico(longitud=6):
     return f"EVAL-{codigo}"
 
 # -----------------------------------------------------------------------------
-# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS (INCLUYENDO TAMAI)
+# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS
 # -----------------------------------------------------------------------------
 ITEMS_LSB50 = [
     "1. Dolores de cabeza", "2. Sensación de mareo o desmayo", "3. Dolores en el pecho o en el corazón",
@@ -413,6 +413,7 @@ ITEMS_BDI = [
     {"titulo": "21. Pérdida de interés en el sexo", "opciones": ["0 - No he notado ningún cambio reciente en mi interés por el sexo.", "1 - Estoy menos interesado/a en el sexo de lo que solía estar.", "2 - Estoy mucho menos interesado/a en el sexo ahora.", "3 - He perdido el interés en el sexo por completo."]}
 ]
 
+# Banco completo de los 344 reactivos oficiales del PAI
 ITEMS_PAI = [
     "1. Me preocupa mi salud más que a la mayoría de la gente.", "2. A veces me siento tan deprimido que nada puede animarme.",
     "3. Tengo pensamientos que prefiero no compartir con nadie.", "4. Me resulta difícil concentrarse en una tarea.",
@@ -595,39 +596,17 @@ OPCIONES_PAI = {
     3: "3 - Completamente verdadera, mucho"
 }
 
-# Integración del TAMAI (Test Autoevaluativo Multifactorial de Adaptación Infantil)
-ITEMS_TAMAI = [
-    "1. Me siento a gusto conmigo mismo la mayor parte del tiempo.",
-    "2. En el colegio me aburro con frecuencia.",
-    "3. Mis padres me prestan atención cuando les hablo de mis cosas.",
-    "4. Tengo buenos amigos con los que juego y hablo.",
-    "5. A veces pienso que soy menos capaz que los demás.",
-    "6. Los profesores suelen ser injustos conmigo.",
-    "7. En mi casa hay discusiones y peleas muy a menudo.",
-    "8. Me cuesta hacer amigos nuevos.",
-    "9. Me siento nervioso o preocupado sin saber muy bien por qué.",
-    "10. Creo que mis notas en el colegio podrían ser mucho mejores.",
-    "11. Siento que en mi familia me quieren y me apoyan.",
-    "12. Prefiero estar solo antes que jugar con otros niños.",
-    "13. Me considero una persona alegre y contenta.",
-    "14. Me gusta ir al colegio todos los días.",
-    "15. Mis padres confían en lo que hago.",
-    "16. Me llevo bien con la mayoría de mis compañeros."
-]
-OPCIONES_TAMAI = {1: "Sí", 2: "No"}
-
 MAPA_TESTS = {
     "LSB-50": {"items": ITEMS_LSB50, "opciones": OPCIONES_LSB50},
     "MMPI-2-RF": {"items": ITEMS_MMPI2RF, "opciones": None},
     "CUIDA": {"items": ITEMS_CUIDA, "opciones": OPCIONES_CUIDA},
     "STAI": {"items": ITEMS_STAI, "opciones": OPCIONES_STAI},
     "BDI-II": {"items": [item["titulo"] for item in ITEMS_BDI], "opciones": None},
-    "PAI": {"items": ITEMS_PAI, "opciones": OPCIONES_PAI},
-    "TAMAI": {"items": ITEMS_TAMAI, "opciones": OPCIONES_TAMAI}
+    "PAI": {"items": ITEMS_PAI, "opciones": OPCIONES_PAI}
 }
 
 # -----------------------------------------------------------------------------
-# DETECCIÓN DE PARÁMETROS URL (Link automático para el evaluado)[cite: 7]
+# DETECCIÓN DE PARÁMETROS URL (Link automático para el evaluado)
 # -----------------------------------------------------------------------------
 query_params = st.query_params
 token_url = query_params.get("token", None)
@@ -643,7 +622,7 @@ if token_url and "token_activo" not in st.session_state:
             st.query_params.clear()
 
 # -----------------------------------------------------------------------------
-# 3. BARRA LATERAL RESTRICTORA (ACCESO PRIVADO AL PERITO)[cite: 7]
+# 3. BARRA LATERAL RESTRICTORA (ACCESO PRIVADO AL PERITO)
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.title("🔒 Acceso Profesional")
@@ -664,7 +643,7 @@ with st.sidebar:
             st.rerun()
 
 # -----------------------------------------------------------------------------
-# 4. RUTEO DE INTERFAZ (EVALUADO vs PANEL PERICIAL)[cite: 7]
+# 4. RUTEO DE INTERFAZ (EVALUADO vs PANEL PERICIAL)
 # -----------------------------------------------------------------------------
 if st.session_state["perito_autenticado"]:
     st.title("🔒 Panel Pericial de Administración")
@@ -917,8 +896,7 @@ else:
                             "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)",
                             "STAI (Cuestionario de Ansiedad Estado-Rasgo)",
                             "BDI-II (Inventario de Depresión de Beck)",
-                            "PAI (Inventario de Evaluación de la Personalidad)",
-                            "TAMAI (Test Autoevaluativo Multifactorial de Adaptación Infantil)"
+                            "PAI (Inventario de Evaluación de la Personalidad)"
                         ]
                     )
                     
@@ -1036,25 +1014,6 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar PAI", use_container_width=True):
                                 datos_token["evaluaciones"]["PAI"] = respuestas_pai
-                                datos_token["estado"] = "finalizado"
-                                guardar_token_db(token_actual, datos_token)
-                                st.session_state["test_enviado"] = True
-                                st.rerun()
-
-                    # G) TAMAI
-                    elif test_seleccionado == "TAMAI (Test Autoevaluativo Multifactorial de Adaptación Infantil)":
-                        st.subheader("TAMAI - Test Autoevaluativo Multifactorial de Adaptación Infantil")
-                        st.info("Indique su grado de acuerdo o respuesta (Sí / No) para cada una de las siguientes afirmaciones.")
-                        respuestas_tamai = {}
-                        with st.form("form_tamai"):
-                            for idx, preg in enumerate(ITEMS_TAMAI, 1):
-                                respuestas_tamai[f"p_{idx}"] = st.radio(
-                                    preg, options=list(OPCIONES_TAMAI.keys()),
-                                    format_func=lambda x: OPCIONES_TAMAI[x], horizontal=True, key=f"tamai_{idx}"
-                                )
-                                st.divider()
-                            if st.form_submit_button("Finalizar y Enviar TAMAI", use_container_width=True):
-                                datos_token["evaluaciones"]["TAMAI"] = respuestas_tamai
                                 datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
