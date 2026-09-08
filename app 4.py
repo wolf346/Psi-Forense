@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import sqlite3 
 import json
 
-# Configuración general de la página
+# Configuración general de la página[cite: 7]
 st.set_page_config(
     page_title="Evaluaciones Psicológicas Forenses", 
     page_icon="⚖️",
@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# OCULTAR MENÚ, FOOTER Y CABECERA DE STREAMLIT (GITHUB / SHARE)
+# OCULTAR MENÚ, FOOTER Y CABECERA DE STREAMLIT (GITHUB / SHARE)[cite: 7]
 # -----------------------------------------------------------------------------
 hide_streamlit_style = """
     <style>
@@ -27,7 +27,7 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE SEGURA (TRAZABILIDAD FORENSE)
+# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE SEGURA (TRAZABILIDAD FORENSE)[cite: 7]
 # -----------------------------------------------------------------------------
 CONTRASEÑA_MAESTRA = "MiClavePericial2026"
 DB_NAME = "forense_seguro.db"
@@ -76,12 +76,12 @@ def guardar_token_db(token, info_dict):
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
     cursor = conn.cursor()
     
-    # Obtener el hash del bloque anterior (Blockchain-lite para inalterabilidad)
+    # Obtener el hash del bloque anterior (Blockchain-lite para inalterabilidad)[cite: 7]
     cursor.execute("SELECT hash_bloque FROM evaluaciones_periciales ORDER BY rowid DESC LIMIT 1")
     ultimo = cursor.fetchone()
     hash_prev = ultimo[0] if ultimo and ultimo[0] else "GENESIS_BLOCK_FORENSE"
     
-    # Sello criptográfico encadenado
+    # Sello criptográfico encadenado[cite: 7]
     payload_str = f"{token}-{json.dumps(info_dict.get('evaluaciones'))}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
     hash_actual = hashlib.sha256(payload_str.encode('utf-8')).hexdigest()
     
@@ -110,7 +110,7 @@ def eliminar_token_db(token):
     conn.close()
 
 def obtener_metadatos_conexion():
-    """Extrae cabeceras HTTP de red para trazabilidad forense de IP y Dispositivo"""
+    """Extrae cabeceras HTTP de red para trazabilidad forense de IP y Dispositivo"""[cite: 7]
     try:
         from streamlit.web.server.websocket_headers import _get_websocket_headers
         headers = _get_websocket_headers()
@@ -124,7 +124,7 @@ def obtener_metadatos_conexion():
         pass
     return "IP_LOCAL_O_NO_DETECTADA", "Navegador_Estandar"
 
-# Cargamos el diccionario global desde SQLite en cada ejecución
+# Cargamos el diccionario global desde SQLite en cada ejecución[cite: 7]
 claves_globales = cargar_datos_db()
 
 if "perito_autenticado" not in st.session_state:
@@ -136,7 +136,7 @@ def generar_token_unico(longitud=6):
     return f"EVAL-{codigo}"
 
 # -----------------------------------------------------------------------------
-# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS
+# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS (INCLUYENDO TAMAI)
 # -----------------------------------------------------------------------------
 ITEMS_LSB50 = [
     "1. Dolores de cabeza", "2. Sensación de mareo o desmayo", "3. Dolores en el pecho o en el corazón",
@@ -413,7 +413,6 @@ ITEMS_BDI = [
     {"titulo": "21. Pérdida de interés en el sexo", "opciones": ["0 - No he notado ningún cambio reciente en mi interés por el sexo.", "1 - Estoy menos interesado/a en el sexo de lo que solía estar.", "2 - Estoy mucho menos interesado/a en el sexo ahora.", "3 - He perdido el interés en el sexo por completo."]}
 ]
 
-# Banco completo de los 344 reactivos oficiales del PAI
 ITEMS_PAI = [
     "1. Me preocupa mi salud más que a la mayoría de la gente.", "2. A veces me siento tan deprimido que nada puede animarme.",
     "3. Tengo pensamientos que prefiero no compartir con nadie.", "4. Me resulta difícil concentrarse en una tarea.",
@@ -596,98 +595,26 @@ OPCIONES_PAI = {
     3: "3 - Completamente verdadera, mucho"
 }
 
-# Banco completo de los 175 reactivos oficiales del TAMAI (Test Autoevaluativo Multifactorial de Adaptación Infantil)
+# Integración del TAMAI (Test Autoevaluativo Multifactorial de Adaptación Infantil)
 ITEMS_TAMAI = [
-    "1. Me cuesta hacer amigos en el colegio.", "2. Mis profesores suelen estar contentos con mi trabajo.",
-    "3. En casa me tratan con mucho cariño.", "4. Me siento a gusto conmigo mismo la mayor parte del tiempo.",
-    "5. A menudo siento que los demás se meten conmigo.", "6. Estudio con ganas y me esfuerzo por aprobar.",
-    "7. Mis padres me prestan atención cuando les hablo.", "8. Creo que tengo muchas cualidades buenas.",
-    "9. Me pongo nervioso cuando tengo que hablar en clase.", "10. Siento que el colegio es un lugar aburrido y pesado.",
-    "11. En mi familia hay discusiones muy a menudo.", "12. Me gustaría ser diferente a como soy.",
-    "13. Prefiero jugar solo que con otros niños.", "14. Mis notas escolares suelen ser buenas.",
-    "15. Mis padres confían en lo que hago.", "16. Me resulta fácil tomar decisiones por mí mismo.",
-    "17. Siento que a los demás niños no les caigo bien.", "18. Me cuesta mucho concentrarme al estudiar.",
-    "19. Siento que en mi casa mandan demasiado y me dejan poco margen.", "20. A veces pienso que no sirvo para nada.",
-    "21. Me cuesta expresar lo que siento ante mis compañeros.", "22. Me aburre muchísimo hacer las tareas escolares.",
-    "23. Mis padres se preocupan por mis problemas y necesidades.", "24. Me considero una persona alegre y optimista.",
-    "25. Siento miedo o vergüenza cuando los profesores me preguntan.", "26. Me gustaría faltar al colegio más a menudo.",
-    "27. Siento que mis padres prefieren a otros hermanos antes que a mí.", "28. Me critico a mí mismo con mucha frecuencia.",
-    "29. Me llevo bien con la mayoría de los chicos de mi clase.", "30. Mis profesores me ayudan cuando tengo dificultades.",
-    "31. En mi hogar me siento seguro y protegido.", "32. Estoy satisfecho con mi aspecto físico y mi manera de ser.",
-    "33. A veces me dan ganas de huir o escapar de casa.", "34. Me esfuerzo por sacar buenas calificaciones.",
-    "35. Mis padres me apoyan cuando tengo dificultades.", "36. Me siento orgulloso de las cosas que hago.",
-    "37. Me cuesta participar en los juegos del grupo.", "38. Siento que el nivel de exigencia en el colegio es demasiado alto.",
-    "39. Mis padres me regañan con demasiada frecuencia.", "40. A veces me siento muy solo aunque esté acompañado.",
-    "41. Me resulta fácil hacer amigos nuevos.", "42. Me gusta ir al colegio cada día.",
-    "43. Mis padres me demuestran afecto habitualmente.", "44. Confío plenamente en mis propias capacidades.",
-    "45. Siento que los demás se aprovechan de mi bondad.", "46. Suelo entregar mis trabajos escolares a tiempo.",
-    "47. En mi casa se respira un ambiente tranquilo y agradable.", "48. Me da miedo cometer errores o fracasar.",
-    "49. Me pongo muy nervioso antes de los exámenes.", "50. Me disgusta profundamente estudiar.",
-    "51. Siento que nadie me comprende en mi familia.", "52. A menudo me siento triste y sin ganas de nada.",
-    "53. Mis compañeros suelen contar conmigo para sus juegos.", "54. Me siento valorado por mis profesores.",
-    "55. Mis padres me escuchan cuando tengo un problema.", "56. Me considero una persona importante para los demás.",
-    "57. Me cuesta mucho obedecer las normas del colegio.", "58. Siento que el colegio me agobia demasiado.",
-    "59. Mis padres discuten entre ellos muy a menudo.", "60. Pienso que tengo peor suerte que los demás.",
-    "61. Prefiero estar solo antes que compartir con otros.", "62. Disfruto aprendiendo cosas nuevas en clase.",
-    "63. Siento que mis padres están orgullosos de mí.", "64. Me gusta mi forma de ser.",
-    "65. A veces siento deseos de romper cosas cuando me enfado.", "66. Me resulta sencillo comprender las explicaciones del profesor.",
-    "67. En mi casa me dejan opinar sobre las decisiones familiares.", "68. Me preocupa lo que los demás piensen de mí.",
-    "69. Siento que los profesores me tienen manía.", "70. Quisiera que las horas de clase pasaran más rápido.",
-    "71. Siento que en mi casa hay demasiadas peleas.", "72. Me siento inferior a los demás niños.",
-    "73. Me llevo bien con los profesores del colegio.", "74. Mis calificaciones reflejan el esfuerzo que hago.",
-    "75. Mis padres me dan la libertad adecuada para mi edad.", "76. Me siento seguro cuando estoy con otras personas.",
-    "77. Me cuesta aceptar las normas impuestas en el colegio.", "78. Siento que las tareas escolares son una pérdida de tiempo.",
-    "79. Mis padres me ayudan a resolver mis conflictos.", "80. Me considero una persona feliz.",
-    "81. Me da vergüenza decir lo que pienso en público.", "82. Me cuesta mucho levantarme para ir al colegio.",
-    "83. Siento que mis padres me exigen demasiado.", "84. A veces me siento desgraciado sin motivo aparente.",
-    "85. Me siento querido y aceptado por mis amigos.", "86. Mis profesores valoran mi esfuerzo diario.",
-    "87. En mi familia hay confianza y diálogo.", "88. Estoy contento con mi cuerpo y mi salud.",
-    "89. A veces me porto mal para llamar la atención.", "90. Me resulta fácil aprobar los exámenes.",
-    "91. Mis padres me premian cuando hago las cosas bien.", "92. Creo que tengo mucha mala suerte en la vida.",
-    "93. Me siento rechazado por mis compañeros.", "94. Me aburro muchísimo en las clases.",
-    "95. Mis padres me dedican tiempo para estar juntos.", "96. Me siento capaz de lograr lo que me propongo.",
-    "97. Me cuesta respetar la disciplina escolar.", "98. Siento que el ambiente del colegio es hostil.",
-    "99. Mis padres me imponen castigos injustos.", "100. A menudo me siento intranquilo y preocupado.",
-    "101. Me resulta fácil integrarme en grupos nuevos.", "102. Me esfuerzo por ser un buen estudiante.",
-    "103. Mis padres me protegen de los peligros.", "104. Me considero una persona agradable.",
-    "105. Me da miedo enfrentarme a situaciones nuevas.", "106. Siento que el colegio no me prepara para el futuro.",
-    "107. Mis padres se interesan por mis notas escolares.", "108. A veces pienso que las cosas malas me pasan solo a mí.",
-    "109. Siento que los demás se ríen de mí.", "110. Me gusta cumplir con mis obligaciones de estudiante.",
-    "111. Siento que mi hogar es un lugar seguro y acogedor.", "112. Tengo confianza en mí mismo ante los retos.",
-    "113. Me cuesta controlar mis impulsos en el colegio.", "114. Siento que los estudios son demasiado difíciles para mí.",
-    "115. Mis padres respetan mis gustos y opiniones.", "116. A menudo me siento desanimado.",
-    "117. Me cuesta hacer amigos duraderos.", "118. Mis profesores son justos al evaluarme.",
-    "119. En mi casa hay un trato afectuoso entre todos.", "120. Me gusta mi manera de actuar.",
-    "121. A veces me siento incomprendido por mis profesores.", "122. Me cuesta mucho concentrarse en las lecturas.",
-    "123. Mis padres me enseñan a ser responsable.", "124. Me considero una persona valiente.",
-    "125. Siento que los demás son más inteligentes que yo.", "126. Mis notas son mejores que las de la media.",
-    "127. Mis padres confían en mis decisiones.", "128. A veces lloro sin saber exactamente por qué.",
-    "129. Me resulta fácil hablar con mis compañeros.", "130. Me siento a gusto en mi aula de clases.",
-    "131. Mis padres me apoyan en mis proyectos.", "132. Estoy satisfecho con mi forma de ser.",
-    "133. Me cuesta aceptar las críticas de los demás.", "134. Me esfuerzo por aprender cada día más.",
-    "135. En mi familia reina la armonía.", "136. Creo que tengo muchas virtudes.",
-    "137. Me pongo muy nervioso ante situaciones imprevistas.", "138. Siento que el estudio es una carga muy pesada.",
-    "139. Mis padres me dan buenos consejos.", "140. A veces me siento inferior a los demás.",
-    "141. Me llevo bien con la mayoría de la gente.", "142. Mis profesores me motivan a seguir estudiando.",
-    "143. Mis padres me demuestran que me quieren.", "144. Me siento seguro de mis propias decisiones.",
-    "145. Me cuesta cumplir con las normas de convivencia.", "146. Siento que las clases son demasiado largas.",
-    "147. Mis padres me conceden la atención que necesito.", "148. A menudo me siento cansado y sin energía.",
-    "149. Me resulta fácil expresar mis sentimientos.", "150. Me gusta participar en las actividades del colegio.",
-    "151. En mi casa se dialoga abiertamente.", "152. Me considero una persona afortunada.",
-    "153. Me da miedo hablar con personas desconocidas.", "154. Siento que no valgo para los estudios.",
-    "155. Mis padres me defienden cuando lo necesito.", "156. Estoy contento con mi vida actual.",
-    "157. Me cuesta respetar la autoridad del profesor.", "158. Siento que el colegio es una obligación molesta.",
-    "159. Mis padres me ayudan cuando tengo problemas personales.", "160. A veces siento una gran tristeza en mi interior.",
-    "161. Me siento querido por mis amigos.", "162. Mis profesores me tratan con respeto y amabilidad.",
-    "163. Siento que mi familia es unida y feliz.", "164. Me gusta cómo soy físicamente.",
-    "165. Me cuesta adaptarme a los cambios de rutina.", "166. Me esfuerzo por sacar el curso adelante.",
-    "167. Mis padres me elogian cuando hago las cosas bien.", "168. Creo que tengo una vida feliz y tranquila.",
-    "169. Me resulta fácil hacer amigos nuevos en cualquier sitio.", "170. Me siento muy cómodo en el ambiente escolar.",
-    "171. Mis padres se preocupan por mi bienestar general.", "172. Me siento orgulloso de ser como soy.",
-    "173. A veces me cuesta controlar mi mal genio.", "174. Disfruto haciendo los trabajos del colegio.",
-    "175. Mis padres me quieren y me lo demuestran todos los días."
+    "1. Me siento a gusto conmigo mismo la mayor parte del tiempo.",
+    "2. En el colegio me aburro con frecuencia.",
+    "3. Mis padres me prestan atención cuando les hablo de mis cosas.",
+    "4. Tengo buenos amigos con los que juego y hablo.",
+    "5. A veces pienso que soy menos capaz que los demás.",
+    "6. Los profesores suelen ser injustos conmigo.",
+    "7. En mi casa hay discusiones y peleas muy a menudo.",
+    "8. Me cuesta hacer amigos nuevos.",
+    "9. Me siento nervioso o preocupado sin saber muy bien por qué.",
+    "10. Creo que mis notas en el colegio podrían ser mucho mejores.",
+    "11. Siento que en mi familia me quieren y me apoyan.",
+    "12. Prefiero estar solo antes que jugar con otros niños.",
+    "13. Me considero una persona alegre y contenta.",
+    "14. Me gusta ir al colegio todos los días.",
+    "15. Mis padres confían en lo que hago.",
+    "16. Me llevo bien con la mayoría de mis compañeros."
 ]
-OPCIONES_TAMAI = ["Sí", "No"]
+OPCIONES_TAMAI = {1: "Sí", 2: "No"}
 
 MAPA_TESTS = {
     "LSB-50": {"items": ITEMS_LSB50, "opciones": OPCIONES_LSB50},
@@ -696,11 +623,11 @@ MAPA_TESTS = {
     "STAI": {"items": ITEMS_STAI, "opciones": OPCIONES_STAI},
     "BDI-II": {"items": [item["titulo"] for item in ITEMS_BDI], "opciones": None},
     "PAI": {"items": ITEMS_PAI, "opciones": OPCIONES_PAI},
-    "TAMAI": {"items": ITEMS_TAMAI, "opciones": None}
+    "TAMAI": {"items": ITEMS_TAMAI, "opciones": OPCIONES_TAMAI}
 }
 
 # -----------------------------------------------------------------------------
-# DETECCIÓN DE PARÁMETROS URL (Link automático para el evaluado)
+# DETECCIÓN DE PARÁMETROS URL (Link automático para el evaluado)[cite: 7]
 # -----------------------------------------------------------------------------
 query_params = st.query_params
 token_url = query_params.get("token", None)
@@ -716,7 +643,7 @@ if token_url and "token_activo" not in st.session_state:
             st.query_params.clear()
 
 # -----------------------------------------------------------------------------
-# 3. BARRA LATERAL RESTRICTORA (ACCESO PRIVADO AL PERITO)
+# 3. BARRA LATERAL RESTRICTORA (ACCESO PRIVADO AL PERITO)[cite: 7]
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.title("🔒 Acceso Profesional")
@@ -737,7 +664,7 @@ with st.sidebar:
             st.rerun()
 
 # -----------------------------------------------------------------------------
-# 4. RUTEO DE INTERFAZ (EVALUADO vs PANEL PERICIAL)
+# 4. RUTEO DE INTERFAZ (EVALUADO vs PANEL PERICIAL)[cite: 7]
 # -----------------------------------------------------------------------------
 if st.session_state["perito_autenticado"]:
     st.title("🔒 Panel Pericial de Administración")
@@ -1117,14 +1044,13 @@ else:
                     # G) TAMAI
                     elif test_seleccionado == "TAMAI (Test Autoevaluativo Multifactorial de Adaptación Infantil)":
                         st.subheader("TAMAI - Test Autoevaluativo Multifactorial de Adaptación Infantil")
-                        st.info("""
-                        **Instrucciones:** Responda con **Sí** o **No** según corresponda a cada afirmación de manera sincera.
-                        """)
+                        st.info("Indique su grado de acuerdo o respuesta (Sí / No) para cada una de las siguientes afirmaciones.")
                         respuestas_tamai = {}
                         with st.form("form_tamai"):
                             for idx, preg in enumerate(ITEMS_TAMAI, 1):
                                 respuestas_tamai[f"p_{idx}"] = st.radio(
-                                    preg, options=OPCIONES_TAMAI, horizontal=True, key=f"tamai_{idx}"
+                                    preg, options=list(OPCIONES_TAMAI.keys()),
+                                    format_func=lambda x: OPCIONES_TAMAI[x], horizontal=True, key=f"tamai_{idx}"
                                 )
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar TAMAI", use_container_width=True):
