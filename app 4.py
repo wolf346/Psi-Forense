@@ -136,42 +136,74 @@ def generar_token_unico(longitud=6):
     return f"EVAL-{codigo}"
 
 # -----------------------------------------------------------------------------
-# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS
+# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS (LSB-50 CORREGIDO SEGÚN PDF)
 # -----------------------------------------------------------------------------
 ITEMS_LSB50 = [
-    "1. Dolores de cabeza", "2. Sensación de mareo o desmayo", "3. Dolores en el pecho o en el corazón",
-    "4. Dolores en la parte baja de la espalda", "5. Dolores musculares", "6. Sensación de falta de aire o ahogo",
-    "7. Palpitaciones o ritmo cardíaco acelerado", "8. Sensación de debilidad en partes del cuerpo",
-    "9. Sensación de pesadez en las piernas", "10. Molestias en el estómago o náuseas",
-    "11. Temblores en el cuerpo o en las manos", "12. Sensación de que las cosas no son reales",
-    "13. Sensación de estar separado de su propio cuerpo", "14. Pensamientos o ideas fijas que no puede quitarse de la cabeza",
-    "15. Necesidad de comprobar las cosas una y otra vez", "16. Dificultad para concentrarse o prestar atención",
-    "17. Olvidos o despistes frecuentes", "18. Dificultad para tomar decisiones", "19. Mente en blanco",
-    "20. Sensación de que algo malo va a pasar", "21. Miedo repentino o sin razón aparente",
-    "22. Sentirse nervioso o interiormente agitado", "23. Sentirse tenso o con sobrecarga emocional",
-    "24. Tener miedo en espacios abiertos o en la calle", "25. Miedo a viajar en medios de transporte públicos",
-    "26. Miedo a quedarse solo o aislarse", "27. Sentirse triste, decaído o desanimado",
-    "28. Pérdida del interés o del placer por las cosas", "29. Sensación de falta de energía o fatiga permanente",
-    "30. Sentimientos de culpa o inutilidad", "31. Pensamientos relacionados con la muerte o con hacerse daño",
-    "32. Deseo o ideas de acabar con su vida", "33. Sentirse solo incluso estando acompañado",
-    "34. Sentir irritabilidad o enfado con facilidad", "35. Accesos o arranques de ira inapropiados",
-    "36. Deseos de romper cosas o discutir violentamente", "37. Discusiones frecuentes con los demás",
-    "38. Sentirse fácilmente incomodado o molesto", "39. Sentir que las demás personas no le comprenden",
-    "40. Sentir que los demás le miran o hablan de usted", "41. Sentir que no se le valora o se le juzga injustamente",
-    "42. Sentirse inferior a otras personas", "43. Sensación de timidez o vergüenza ante los demás",
-    "44. Problemas o dificultades para conciliar el sueño", "45. Despertarse a mitad de la noche o muy temprano",
-    "46. Sueño intranquilo o pesadillas", "47. Pérdida del apetito", "48. Comer en exceso o de forma descontrolada",
-    "49. Dificultades o falta de interés en las relaciones sexuales", "50. Sensación de malestar o incomodidad en su cuerpo"
+    "1. Mi corazón palpita o va muy deprisa.",
+    "2. Me siento triste.",
+    "3. Tengo ganas de romper o destruir algo.",
+    "4. Siento nerviosismo o agitación interior.",
+    "5. Tengo mareos o sensaciones de desmayo.",
+    "6. Me preocupa la dejadez y el descuido.",
+    "7. Tengo que comprobar una y otra vez todo lo que hago.",
+    "8. Me cuesta tomar decisiones.",
+    "9. Me irrito o enfado por cualquier cosa.",
+    "10. Siento miedo en la calle o en espacios abiertos.",
+    "11. Tengo dolores de cabeza.",
+    "12. Me siento decaído o falto de fuerzas.",
+    "13. Me despierto por la madrugada.",
+    "14. Duermo inquieto o me despierto mucho por la noche.",
+    "15. Doy vueltas a palabras o ideas que no consigo quitarme de la cabeza.",
+    "16. Me siento incomodo o vergonzoso cuando estoy en reuniones o con gente.",
+    "17. Me vienen ideas de acabar con mi vida.",
+    "18. Tengo miedo sin motivo.",
+    "19. Tengo molestias digestivas o náuseas.",
+    "20. Siento hormigueo o se me duerme alguna parte de mi cuerpo.",
+    "21. Veo mi futuro sin esperanza.",
+    "22. Me da miedo estar solo.",
+    "23. Tengo ataques de ira que no puedo controlar.",
+    "24. Me siento incomprendido o no me hacen caso.",
+    "25. Me da miedo salir de casa sólo.",
+    "26. Me parece que otras personas me observan o hablan de mí.",
+    "27. Me cuesta dormirme.",
+    "28. Tengo sentimiento de culpa.",
+    "29. Me siento incómodo comiendo o bebiendo en público.",
+    "30. Me siento herido con facilidad.",
+    "31. Me siento incapaz de hacer las cosas o terminar las tareas.",
+    "32. No siento interés por nada.",
+    "33. Tengo manías como repetir cosas innecesariamente (tocar algo, lavarme, comprobar algo, etc.).",
+    "34. Me vienen ideas o imágenes que me dan miedo.",
+    "35. Me siento temeroso.",
+    "36. Tengo que hacer las cosas muy despacio para estar seguro de que lo hago bien.",
+    "37. Me siento solo.",
+    "38. Me siento inferior a los demás.",
+    "39. Lloro con facilidad.",
+    "40. Me siento solo, aunque tenga compañía.",
+    "41. Me da por gritar o tirar las cosas.",
+    "42. Me siento inútil o poco valioso.",
+    "43. Me duelen los músculos.",
+    "44. Discuto con frecuencia.",
+    "45. Tengo dolores en el corazón o en el pecho.",
+    "46. Me dan ahogos o me cuesta respirar.",
+    "47. Tengo que evitar ciertas cosas, lugares o actividades porque me dan miedo.",
+    "48. Me dan ganas de golpear o hacer daño a alguien.",
+    "49. Siento que todo requiere un gran esfuerzo.",
+    "50. Tengo presentimientos de que va a pasar algo malo."
 ]
-OPCIONES_LSB50 = {0: "0 - Nada", 1: "1 - Algo", 2: "2 - Moderadamente", 3: "3 - Bastante", 4: "4 - Mucho"}
+OPCIONES_LSB50 = {
+    0: "0 - Nada", 
+    1: "1 - Poco", 
+    2: "2 - Moderadamente", 
+    3: "3 - Bastante", 
+    4: "4 - Mucho"
+}
 
-# REACTIVOS OFICIALES ACTUALIZADOS SEGÚN CUADERNILLO MMPI-2-RF (MANUAL MODERNO)
 ITEMS_MMPI2RF = [
     "1. Me gustan las revistas de mecánica.",
     "2. Tengo buen apetito.",
     "3. Creo que me gustaría el trabajo de bibliotecario.",
     "4. Mi vida diaria está llena de cosas que mantienen mi interés.",
-    "5. A veces he sentido un intenso deseo de abandonar mi hogar.",
+    "5. A veces he sentito un intenso deseo de abandonar mi hogar.",
     "6. Tengo dificultades para concentrarme en una tarea o trabajo.",
     "7. Mi madre es una buena mujer, (O si su madre ha fallecido) Mi madre era una buena mujer.",
     "8. Encuentro alivio cuando comparto mis problemas con alguien.",
@@ -452,7 +484,7 @@ ITEMS_MMPI2RF = [
     "283. Hablar con alguien sobre los problemas y preocupaciones es mucho mejor que tomar drogas o medicinas.",
     "284. Tengo miedo de estar solo(a) en un sitio al descubierto.",
     "285. A veces me parece que no puedo dejar de hablar.",
-    "286. No le tengo miedo a los ratones.",
+    "286. No le tengo miedo los ratones.",
     "287. Alguien ha tratado de influir en mi mente.",
     "288. Con frecuencia siento que no soy tan bueno(a) como otras personas.",
     "289. Con frecuencia he tenido miedo durante la noche.",
@@ -506,7 +538,6 @@ ITEMS_MMPI2RF = [
     "337. Me he enojado tanto con alguien, que he sentido como si fuera a explotar.",
     "338. Frecuentemente me encuentro preocupado(a) por algo."
 ]
-
 OPCIONES_MMPI = ["Verdadero", "Falso"]
 
 ITEMS_CUIDA = [
@@ -579,7 +610,6 @@ ITEMS_CUIDA = [
     "186. Sé brindar protección afectiva y física.", "187. Muestro comprensión ante las debilidades ajenas.", "188. Mantengo la firmeza en mis valores fundamentales.",
     "189. Sé dar respuestas serenas en situaciones críticas."
 ]
-
 OPCIONES_CUIDA = {
     1: "1 - Completamente en desacuerdo", 
     2: "2 - En desacuerdo", 
@@ -1133,7 +1163,7 @@ else:
                         st.info("""
                         **Instrucciones oficiales:**
                         A continuación se presenta una lista de molestias, problemas o síntomas psicológicos y físicos. Lea cada uno detenidamente y señale hasta qué punto le ha preocupado o molestado **DURANTE LAS ÚLTIMAS DOS SEMANAS, INCLUYENDO EL DÍA DE HOY**.
-                        * **0** = Nada | **1** = Algo | **2** = Moderadamente | **3** = Bastante | **4** = Mucho
+                        * **0** = Nada | **1** = Poco | **2** = Moderadamente | **3** = Bastante | **4** = Mucho
                         """)
                         respuestas_lsb = {}
                         with st.form("form_lsb50"):
