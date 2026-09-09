@@ -132,34 +132,61 @@ def generar_token_unico(longitud=6):
     return f"EVAL-{codigo}"
 
 # -----------------------------------------------------------------------------
-# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS
+# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS (CORREGIDOS SEGÚN MANUALES OFICIALES)
 # -----------------------------------------------------------------------------
 ITEMS_LSB50 = [
-    "1. Dolores de cabeza", "2. Sensación de mareo o desmayo", "3. Dolores en el pecho o en el corazón",
-    "4. Dolores en la parte baja de la espalda", "5. Dolores musculares", "6. Sensación de falta de aire o ahogo",
-    "7. Palpitaciones o ritmo cardíaco acelerado", "8. Sensación de debilidad en partes del cuerpo",
-    "9. Sensación de pesadez en las piernas", "10. Molestias en el estómago o náuseas",
-    "11. Temblores en el cuerpo o en las manos", "12. Sensación de que las cosas no son reales",
-    "13. Sensación de estar separado de su propio cuerpo", "14. Pensamientos o ideas fijas que no puede quitarse de la cabeza",
-    "15. Necesidad de comprobar las cosas una y otra vez", "16. Dificultad para concentrarse o prestar atención",
-    "17. Olvidos o despistes frecuentes", "18. Dificultad para tomar decisiones", "19. Mente en blanco",
-    "20. Sensación de que algo malo va a pasar", "21. Miedo repentino o sin razón aparente",
-    "22. Sentirse nervioso o interiormente agitado", "23. Sentirse tenso o con sobrecarga emocional",
-    "24. Tener miedo en espacios abiertos o en la calle", "25. Miedo a viajar en medios de transporte públicos",
-    "26. Miedo a quedarse solo o aislarse", "27. Sentirse triste, decaído o desanimado",
-    "28. Pérdida del interés o del placer por las cosas", "29. Sensación de falta de energía o fatiga permanente",
-    "30. Sentimientos de culpa o inutilidad", "31. Pensamientos relacionados con la muerte o con hacerse daño",
-    "32. Deseo o ideas de acabar con su vida", "33. Sentirse solo incluso estando acompañado",
-    "34. Sentir irritabilidad o enfado con facilidad", "35. Accesos o arranques de ira inapropiados",
-    "36. Deseos de romper cosas o discutir violentamente", "37. Discusiones frecuentes con los demás",
-    "38. Sentirse fácilmente incomodado o molesto", "39. Sentir que las demás personas no le comprenden",
-    "40. Sentir que los demás le miran o hablan de usted", "41. Sentir que no se le valora o se le juzga injustamente",
-    "42. Sentirse inferior a otras personas", "43. Sensación de timidez o vergüenza ante los demás",
-    "44. Problemas o dificultades para conciliar el sueño", "45. Despertarse a mitad de la noche o muy temprano",
-    "46. Sueño intranquilo o pesadillas", "47. Pérdida del apetito", "48. Comer en exceso o de forma descontrolada",
-    "49. Dificultades o falta de interés en las relaciones sexuales", "50. Sensación de malestar o incomodidad en su cuerpo"
+    "1. Mi corazón palpita o va muy deprisa.",[cite: 3]
+    "2. Me siento triste.",[cite: 3]
+    "3. Tengo ganas de romper o destruir algo.",[cite: 3]
+    "4. Siento nerviosismo o agitación interior.",[cite: 3]
+    "5. Tengo mareos o sensaciones de desmayo.",[cite: 3]
+    "6. Me preocupa la dejadez y el descuido.",[cite: 3]
+    "7. Tengo que comprobar una y otra vez todo lo que hago.",[cite: 3]
+    "8. Me cuesta tomar decisiones.",[cite: 3]
+    "9. Me irrito o enfado por cualquier cosa.",[cite: 3]
+    "10. Siento miedo en la calle o en espacios abiertos.",[cite: 3]
+    "11. Tengo dolores de cabeza.",[cite: 3]
+    "12. Me siento decaído o falto de fuerzas.",[cite: 3]
+    "13. Me despierto por la madrugada.",[cite: 3]
+    "14. Duermo inquieto o me despierto mucho por la noche.",[cite: 3]
+    "15. Doy vueltas a palabras o ideas que no consigo quitarme de la cabeza.",[cite: 3]
+    "16. Me siento incomodo o vergonzoso cuando estoy en reuniones o con gente.",[cite: 3]
+    "17. Me vienen ideas de acabar con mi vida.",[cite: 3]
+    "18. Tengo miedo sin motivo.",[cite: 3]
+    "19. Tengo molestias digestivas o náuseas.",[cite: 3]
+    "20. Siento hormigueo o se me duerme alguna parte de mi cuerpo.",[cite: 3]
+    "21. Veo mi futuro sin esperanza.",[cite: 3]
+    "22. Me da miedo estar solo.",[cite: 3]
+    "23. Tengo ataques de ira que no puedo controlar.",[cite: 3]
+    "24. Me siento incomprendido o no me hacen caso.",[cite: 3]
+    "25. Me da miedo salir de casa sólo.",[cite: 3]
+    "26. Me parece que otras personas me observan o hablan de mí.",[cite: 3]
+    "27. Me cuesta dormirme.",[cite: 3]
+    "28. Tengo sentimiento de culpa.",[cite: 3]
+    "29. Me siento incómodo comiendo o bebiendo en público.",[cite: 3]
+    "30. Me siento herido con facilidad.",[cite: 3]
+    "31. Me siento incapaz de hacer las cosas o terminar las tareas.",[cite: 3]
+    "32. No siento interés por nada.",[cite: 3]
+    "33. Tengo manías como repetir cosas innecesariamente (tocar algo, lavarme, comprobar algo, etc.).",[cite: 3]
+    "34. Me vienen ideas o imágenes que me dan miedo.",[cite: 3]
+    "35. Me siento temeroso.",[cite: 3]
+    "36. Tengo que hacer las cosas muy despacio para estar seguro de que lo hago bien.",[cite: 3]
+    "37. Me siento solo.",[cite: 3]
+    "38. Me siento inferior a los demás.",[cite: 3]
+    "39. Lloro con facilidad.",[cite: 3]
+    "40. Me siento solo, aunque tenga compañía.",[cite: 3]
+    "41. Me da por gritar o tirar las cosas.",[cite: 3]
+    "42. Me siento inútil o poco valioso.",[cite: 3]
+    "43. Me duelen los músculos.",[cite: 3]
+    "44. Discuto con frecuencia.",[cite: 3]
+    "45. Tengo dolores en el corazón o en el pecho.",[cite: 3]
+    "46. Me dan ahogos o me cuesta respirar.",[cite: 3]
+    "47. Tengo que evitar ciertas cosas, lugares o actividades porque me dan miedo.",[cite: 3]
+    "48. Me dan ganas de golpear o hacer daño a alguien.",[cite: 3]
+    "49. Siento que todo requiere un gran esfuerzo.",[cite: 3]
+    "50. Tengo presentimientos de que va a pasar algo malo."[cite: 3]
 ]
-OPCIONES_LSB50 = {0: "0 - Nada", 1: "1 - Algo", 2: "2 - Moderadamente", 3: "3 - Bastante", 4: "4 - Mucho"}
+OPCIONES_LSB50 = {0: "0 - Nada", 1: "1 - Poco", 2: "2 - Moderadamente", 3: "3 - Bastante", 4: "4 - Mucho"}[cite: 3]
 
 ITEMS_MMPI2RF = [
     "1. Me gustan las revistas de mecánica.", "2. Tengo buen apetito.", "3. Me despierto fresco y descansado casi todas las mañanas.",
@@ -404,12 +431,11 @@ ITEMS_BDI = [
     {"titulo": "16. Cambios en el patrón de sueño", "opciones": ["0 - No he experimentado ningún cambio en mi patrón de sueño.", "1 - Duermo algo más o algo menos que de costumbre.", "2 - Duermo mucho más o mucho menos que de costumbre.", "3 - Duermo la mayor parte del tiempo o me despierto 1-2 horas antes y no puedo volver a dormirme."]},
     {"titulo": "17. Irritabilidad", "opciones": ["0 - No estoy más irritable de lo habitual.", "1 - Estoy más irritable de lo habitual.", "2 - Estoy mucho más irritable de lo habitual.", "3 - Estoy irritable todo el tiempo."]},
     {"titulo": "18. Cambios en el apetito", "opciones": ["0 - No he experimentado ningún cambio en mi apetito.", "1 - Mi apetito es algo menor o mayor que de costumbre.", "2 - Mi apetito es mucho menor o mayor que de costumbre.", "3 - No tengo apetito en absoluto o tengo ansias de comer todo el tiempo."]},
-    {"titulo": "19. Dificultad de concentración", "opciones": ["0 - Puedo concentrarme tan bien como siempre.", "1 - No puedo concentrarme tan bien como habitualmente.", "2 - Me cuesta mantener la concentración en cualquier cosa por mucho tiempo.", "3 - Encuentro que no puedo concentrarme en nada."]},
+    {"titulo": "19. Dificultad de concentración", "opciones": ["0 - Puedo concentrarme tan bien como siempre.", "1 - No puedo concentrarme tan bien como habitualmente.", "2 - Me cuesta mantener la concentración en cualquier cosa por mucho tiempo.", "3 - Encuentro que no puedo concentrarse en nada."]},
     {"titulo": "20. Cansancio o fatiga", "opciones": ["0 - No estoy más cansado/a o fatigado/a que de costumbre.", "1 - Me canso o fatigo más fácilmente que de costumbre.", "2 - Estoy demasiado cansado/a o fatigado/a para hacer muchas de las cosas que solía hacer.", "3 - Estoy demasiado cansado/a o fatigado/a para hacer la mayoría de las cosas que solía hacer."]},
     {"titulo": "21. Pérdida de interés en el sexo", "opciones": ["0 - No he notado ningún cambio reciente en mi interés por el sexo.", "1 - Estoy menos interesado/a en el sexo de lo que solía estar.", "2 - Estoy mucho menos interesado/a en el sexo ahora.", "3 - He perdido el interés en el sexo por completo."]}
 ]
 
-# Banco completo y oficial de los 344 reactivos reales del PAI (TEA Ediciones)
 ITEMS_PAI = [
     "1. Mis amigos están disponibles cuando los necesito.",
     "2. Tengo algunos conflictos internos que me causan problemas.",
@@ -571,7 +597,7 @@ ITEMS_PAI = [
     "158. A veces parece que alguien está bloqueando mis pensamientos.",
     "159. Me gusta conducir muy deprisa.",
     "160. La mayor parte de la gente está deseando ir al dentista.",
-    "161. La gente não comprende lo mucho que sufro.",
+    "161. La gente no comprende lo mucho que sufro.",
     "162. Tengo muchos problemas económicos.",
     "163. Recientemente se han producido muchos cambios en mi vida.",
     "164. En mi casa hay poca estabilidad.",
@@ -756,7 +782,6 @@ ITEMS_PAI = [
     "343. Pongo mucho cuidado en la forma de gastar el dinero.",
     "344. Casi nunca estoy de mal humor."
 ]
-
 OPCIONES_PAI = {
     "F": "F - Falso",
     "LV": "LV - Ligeramente verdadero",
@@ -1063,14 +1088,14 @@ else:
                         ]
                     )
                     
-                    # A) LSB-50
+                    # A) LSB-50 (Corregido al orden y opciones oficiales del PDF)
                     if test_seleccionado == "Listado de Síntomas Breve (LSB-50)":
                         st.subheader("Listado de Síntomas Breve (LSB-50)")
                         st.info("""
-                        **Instrucciones oficiales:**
-                        A continuación se presenta una lista de molestias, problemas o síntomas psicológicos y físicos. Lea cada uno detenidamente y señale hasta qué punto le ha preocupado o molestado **DURANTE LAS ÚLTIMAS DOS SEMANAS, INCLUYENDO EL DÍA DE HOY**.
-                        * **0** = Nada | **1** = Algo | **2** = Moderadamente | **3** = Bastante | **4** = Mucho
-                        """)
+                        **Instrucciones oficiales (TEA Ediciones):**
+                        Conteste a cada una teniendo en cuenta aquello que haya sentido o experimentado **DURANTE LAS ÚLTIMAS SEMANAS, INCLUYENDO EL DÍA DE HOY**.
+                        * **0** = Nada | **1** = Poco | **2** = Moderadamente | **3** = Bastante | **4** = Mucho
+                        """)[cite: 3]
                         respuestas_lsb = {}
                         with st.form("form_lsb50"):
                             for idx, preg in enumerate(ITEMS_LSB50, 1):
