@@ -76,10 +76,12 @@ def guardar_token_db(token, info_dict):
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
     cursor = conn.cursor()
     
+    # Obtener el hash del bloque anterior (Blockchain-lite para inalterabilidad)
     cursor.execute("SELECT hash_bloque FROM evaluaciones_periciales ORDER BY rowid DESC LIMIT 1")
     ultimo = cursor.fetchone()
     hash_prev = ultimo[0] if ultimo and ultimo[0] else "GENESIS_BLOCK_FORENSE"
     
+    # Sello criptográfico encadenado
     payload_str = f"{token}-{json.dumps(info_dict.get('evaluaciones'))}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
     hash_actual = hashlib.sha256(payload_str.encode('utf-8')).hexdigest()
     
@@ -108,6 +110,7 @@ def eliminar_token_db(token):
     conn.close()
 
 def obtener_metadatos_conexion():
+    """Extrae cabeceras HTTP de red para trazabilidad forense de IP y Dispositivo"""
     try:
         from streamlit.web.server.websocket_headers import _get_websocket_headers
         headers = _get_websocket_headers()
@@ -121,6 +124,7 @@ def obtener_metadatos_conexion():
         pass
     return "IP_LOCAL_O_NO_DETECTADA", "Navegador_Estandar"
 
+# Cargamos el diccionario global desde SQLite en cada ejecución
 claves_globales = cargar_datos_db()
 
 if "perito_autenticado" not in st.session_state:
@@ -409,6 +413,7 @@ ITEMS_BDI = [
     {"titulo": "21. Pérdida de interés en el sexo", "opciones": ["0 - No he notado ningún cambio reciente en mi interés por el sexo.", "1 - Estoy menos interesado/a en el sexo de lo que solía estar.", "2 - Estoy mucho menos interesado/a en el sexo ahora.", "3 - He perdido el interés en el sexo por completo."]}
 ]
 
+# Banco completo de los 344 reactivos oficiales del PAI
 ITEMS_PAI = [
     "1. Me preocupa mi salud más que a la mayoría de la gente.", "2. A veces me siento tan deprimido que nada puede animarme.",
     "3. Tengo pensamientos que prefiero no compartir con nadie.", "4. Me resulta difícil concentrarse en una tarea.",
@@ -539,7 +544,7 @@ ITEMS_PAI = [
     "253. A veces veo siluetas extrañas.", "254. Me irrita la gente desorganizada.",
     "255. Siento que no valgo nada como persona.", "256. Me atrae la velocidad y el peligro.",
     "257. Tengo cefaleas crónicas.", "258. A veces me siento eufórico y sin descanso.",
-    "259. Me preocupa enfermarse gravemente.", "260. Me cuesta cumplir con los plazos.",
+    "259. Me preocupa enfermarme gravemente.", "260. Me cuesta cumplir con los plazos.",
     "261. A veces siento pinchazos en las extremidades.", "262. Me disgusta la injusticia.",
     "263. Siento una tristeza infinita.", "264. Me gusta alardear de mis capacidades.",
     "265. Creo que intentan perjudicarme.", "266. Me cuesta leer textos largos.",
@@ -583,6 +588,7 @@ ITEMS_PAI = [
     "341. Siento temblores frecuentes.", "342. Me disgusta la mentira.",
     "343. Siento una profunda tristeza interna.", "344. Me gusta destacar en todo."
 ]
+
 OPCIONES_PAI = {
     0: "0 - Falsa, nada en absoluto",
     1: "1 - Ligeramente verdadera, algo",
@@ -590,194 +596,13 @@ OPCIONES_PAI = {
     3: "3 - Completamente verdadera, mucho"
 }
 
-# Banco de reactivos del MCMI-IV (Inventario Clínico Multiaxial de Millon-IV)
-ITEMS_MCMI_IV = [
-    "1. Me resulta difícil presentarme ante gente nueva sin sentirme muy tenso.",
-    "2. Rara vez disfruto de las cosas tanto como la mayoría de la gente parece hacerlo.",
-    "3. Siento que la gente me observa y habla de mí a mis espaldas.",
-    "4. A menudo me siento tan desanimado y triste que desearía no haberme despertado.",
-    "5. Me gusta estar rodeado de gente y ser el centro de atención.",
-    "6. Siempre he sido una persona muy nerviosa y tensa.",
-    "7. Siento que la vida no tiene ningún propósito ni significado real.",
-    "8. A veces pierdo el control de mí mismo y hago cosas violentas.",
-    "9. Me resulta muy difícil confiar en los demás, incluso en mis amigos.",
-    "10. Mis estados de ánimo cambian con mucha rapidez y sin razón aparente.",
-    "11. Siento que tengo poderes o capacidades especiales que otros no tienen.",
-    "12. Me preocupa excesivamente contraer una enfermedad grave.",
-    "13. A menudo tengo la sensación de que algo malo va a suceder.",
-    "14. Me considero una persona muy superior a la mayoría de quienes me rodean.",
-    "15. Tengo problemas constantes para conciliar el sueño o mantenerlo.",
-    "16. Siento que nadie se preocupa verdaderamente por mí.",
-    "17. Me agrada intimidar a otros o hacer que hagan lo que yo quiero.",
-    "18. A veces escucho voces o sonidos extraños que nadie más puede oír.",
-    "19. Me resulta muy difícil tomar cualquier decisión por mi cuenta.",
-    "20. Siento una necesidad imperiosa de que todo esté limpio y ordenado de forma perfecta.",
-    "21. He consumido alcohol o drogas en exceso para escapar de mis problemas.",
-    "22. Me considero una persona extremadamente tímida e insegura.",
-    "23. A menudo siento un vacío profundo e insoportable en mi interior.",
-    "24. Me molesta profundamente que los demás cuestionen mis decisiones.",
-    "25. Siento que las personas intentan aprovecharse de mí o engañarme siempre.",
-    "26. A veces siento que mi cuerpo o mi mente no me pertenecen.",
-    "27. Disfruto enormemente provocando discusiones o peleas.",
-    "28. Tengo pensamientos recurrentes sobre cómo acabar con mi vida.",
-    "29. Me cuesta horrores expresar afecto o ternura hacia otras personas.",
-    "30. Siento una tensión física constante en los músculos del cuello y los hombros.",
-    "31. Me agrada manipular a los demás para conseguir mis propios objetivos.",
-    "32. A menudo siento que los demás me miran con desprecio u odio.",
-    "33. Me resulta imposible relajarme, incluso cuando estoy de vacaciones.",
-    "34. Siento una tristeza profunda que parece no tener fin.",
-    "35. Creo que soy una persona destinada a hacer grandes cosas.",
-    "36. A veces siento rabia e impulsos destructivos incontrolables.",
-    "37. Me aterra profundamente el abandono o el rechazo de mis seres queridos.",
-    "38. Tengo visiones o percepciones extrañas que los demás no experimentan.",
-    "39. Me considero una persona sumamente rígida y moralista.",
-    "40. A menudo siento que el tiempo pasa muy lento o muy rápido.",
-    "41. Me gusta llamar la atención vistiendo o actuando de forma extravagante.",
-    "42. Siento que la culpa de todo lo malo que ocurre es exclusivamente mía.",
-    "43. Me resulta muy fácil mentir o engañar sin sentir ningún remordimiento.",
-    "44. Tengo ataques repentinos de pánico y terror sin causa justificada.",
-    "45. Siento que mi mente está completamente nublada y confusa.",
-    "46. Me disgusta enormemente obedecer reglas o normas impuestas por otros.",
-    "47. A veces dudo de si lo que veo o siento es real o imaginario.",
-    "48. Me esfuerzo constantemente por complacer a los demás, aunque me cueste sufrir.",
-    "49. Siento que la gente me envidia por mis grandes cualidades.",
-    "50. Tengo dolores físicos frecuentes que los médicos no logran explicar.",
-    "51. Me siento profundamente desgraciado la mayor parte del tiempo.",
-    "52. A menudo actúo de forma impulsiva y temeraria sin medir las consecuencias.",
-    "53. Siento que mis pensamientos no son míos, sino que alguien los implanta en mi cabeza.",
-    "54. Me considero una persona muy fría, calculadora y distante.",
-    "55. Tengo problemas graves para controlar mis impulsos sexuales o agresivos.",
-    "56. Me agobia enormemente estar en lugares cerrados o con mucha gente.",
-    "57. Siento que mi vida es un completo y absoluto fracaso.",
-    "58. Me gusta ser el líder indiscutible en cualquier grupo o situación.",
-    "59. A veces experimento una energía desbordante y una alegría inusual sin motivo.",
-    "60. Siento que nadie es digno de confianza absoluta.",
-    "61. Me cuesta muchísimo concentrarme en la lectura o en cualquier tarea.",
-    "62. Tengo recuerdos recurrentes y muy dolorosos de experiencias pasadas.",
-    "63. Siento una necesidad constante de recibir halagos y aprobaciones.",
-    "64. Me considero una persona muy detallista, perfeccionista y ordenada.",
-    "65. A veces siento que estoy viviendo en un sueño o una película.",
-    "66. Me molesta profundamente que me den consejos que no he pedido.",
-    "67. Siento que las fuerzas oscuras o el destino conspiran en mi contra.",
-    "68. Me aterra cometer el más mínimo error en público.",
-    "69. Tengo la costumbre de acumular objetos inútiles por si acaso.",
-    "70. Siento una opresión insoportable en el pecho cuando me pongo nervioso.",
-    "71. Me agrada transgredir las leyes o normas sociales establecidos.",
-    "72. A veces siento que tengo una misión divina o especial en la tierra.",
-    "73. Me resulta muy difícil decir 'no' cuando alguien me pide un favor.",
-    "74. Siento una rabia intensa contra quienes me han ofendido alguna vez.",
-    "75. Tengo cambios de humor extremos y repentinos durante el mismo día.",
-    "76. Me considero una persona poco atractiva, aburrida y sin valor.",
-    "77. A veces escucho murmullos o susurros amenazantes a mi alrededor.",
-    "78. Me gusta presionar o dominar a las personas más débiles.",
-    "79. Siento una fatiga extrema y permanente que no se quita con dormir.",
-    "80. Me resulta muy difícil mantener un empleo o una relación estable.",
-    "81. A veces siento impulsos irresistibles de hacerme daño físico.",
-    "82. Me agrada presumir de mis riquezas, logros o conquistas.",
-    "83. Siento que la gente habla mal de mí y se ríe a mis espaldas.",
-    "84. Tengo un miedo horrible a quedarme solo o aislado.",
-    "85. Me considero una persona excesivamente seria, formal y aburrida.",
-    "86. A veces pierdo la noción del tiempo y de dónde me encuentro.",
-    "87. Siento que mis sentimientos son superficiales y poco sinceros.",
-    "88. Me molesta enormemente que interrumpan mis rutinas o planes.",
-    "89. Tengo una necesidad incontrolable de verificar las cosas una y otra vez.",
-    "90. Siento que el mundo es un lugar extremadamente peligroso y hostil.",
-    "91. Me resulta fácil aprovecharme de la bondad o ingenuidad ajena.",
-    "92. A veces experimento sensaciones extrañas de hormigueo o entumecimiento.",
-    "93. Siento que mi pareja o mis amigos me traicionan constantemente.",
-    "94. Me agobia la responsabilidad de tomar decisiones importantes.",
-    "95. Tengo pensamientos recurrentes de carácter agresivo u obsceno que me perturban.",
-    "96. Me considero una persona dotada de una inteligencia muy superior.",
-    "97. Siento una desesperanza absoluta respecto al futuro.",
-    "98. A veces actúo de forma dramática y exagerada para llamar la atención.",
-    "99. Me cuesta muchísimo perdonar una ofensa o una falta de respeto.",
-    "100. Siento que mi cuerpo está enfermo aunque los análisis salgan bien.",
-    "101. Me gusta burlarme de las creencias o costumbres de los demás.",
-    "102. A veces siento que mis extremidades flotan o se separan de mi cuerpo.",
-    "103. Siento una intensa necesidad de afecto que nunca queda satisfecha.",
-    "104. Me considero una persona sumamente trabajadora, recta y exigente.",
-    "105. Tengo episodios en los que pierdo totalmente el control de mis actos.",
-    "106. Me aterra pensar en el envejecimiento, la enfermedad y la muerte.",
-    "107. Siento que la gente conspira para arruinar mi carrera o reputación.",
-    "108. Me resulta muy difícil adaptarme a los cambios imprevistos.",
-    "109. A veces oigo mi propio pensamiento repetido en voz alta.",
-    "110. Siento una pereza y una apatía inmensas ante cualquier esfuerzo.",
-    "111. Me agrada jugar con los sentimientos de los demás.",
-    "112. Tengo pánico a las alturas, a los espacios abiertos o a volar.",
-    "113. Siento que mi vida carece por completo de sentido y valor.",
-    "114. Me considero una persona excepcionalmente simpática y encantadora.",
-    "115. A veces tengo la certeza absoluta de que me persiguen.",
-    "116. Me molesta profundamente que los demás no sigan mis instrucciones.",
-    "117. Siento una tensión dolorosa en la mandíbula y rechino los dientes.",
-    "118. Me resulta muy difícil mostrar mis verdaderos sentimientos.",
-    "119. Tengo una tendencia natural a culpar a los demás de mis errores.",
-    "120. Siento que el peso de mis responsabilidades me está aplastando.",
-    "121. Me agrada desafiar abiertamente a la autoridad y a las leyes.",
-    "122. A veces veo sombras, luces o figuras que nadie más ve.",
-    "123. Siento una necesidad constante de protección y guía ajena.",
-    "124. Me considero una persona sumamente cínica y desconfiada.",
-    "125. Tengo problemas graves de memoria y desorientación frecuente.",
-    "126. Me aterra la posibilidad de perder el control de mis emociones.",
-    "127. Siento que mis logros nunca son reconocidos ni valorados.",
-    "128. Me resulta muy difícil tolerar la frustración o la espera.",
-    "129. A veces siento impulsos incontrolables de gritar o insultar.",
-    "130. Siento una tristeza tan grande que me impide levantarme de la cama.",
-    "131. Me gusta presumir de ser una persona dura y sin sentimientos.",
-    "132. Tengo fobias intensas e irracionales hacia ciertos animales u objetos.",
-    "133. Siento que alguien está leyendo o manipulando mi mente.",
-    "134. Me considero una persona extremadamente pulcra y ordenada.",
-    "135. A veces experimento una felicidad eufórica totalmente inmotivada.",
-    "136. Me molesta enormemente que me den órdenes o mandatos.",
-    "137. Siento una angustia tan intensa que me cuesta respirar.",
-    "138. Me resulta muy difícil establecer vínculos afectivos profundos.",
-    "139. Tengo la firme creencia de que poseo una misión especial en el mundo.",
-    "140. Siento que mi cuerpo se debilita y desfallece sin causa médica.",
-    "141. Me agrada manipular situaciones para salir siempre beneficiado.",
-    "142. A veces dudo de mi propia existencia y de la realidad del mundo.",
-    "143. Siento una necesidad extrema de agradar y ser aceptado por todos.",
-    "144. Me considero una persona muy estricta conmigo misma y con los demás.",
-    "145. Tengo arrebatos repentinos de ira furiosa por pequeñeces.",
-    "146. Me aterra pensar que puedo quedarme completamente solo.",
-    "147. Siento que las personas se ríen de mis desgracias y fracasos.",
-    "148. Me resulta muy difícil cambiar mis opiniones o costumbres.",
-    "149. A veces oigo voces que me ordenan hacer cosas peligrosas.",
-    "150. Siento que mi vida es un pesado suplicio sin esperanza.",
-    "151. Me gusta provocar celos o rivalidad entre mis conocidos.",
-    "152. Tengo ataques de pánico repentinos acompañados de mareos y sudores.",
-    "153. Siento que mis ideas son robadas o plagiadas por otros.",
-    "154. Me considero una persona fría, calculadora y analítica.",
-    "155. A veces experimento cambios de personalidad muy extraños.",
-    "156. Me molesta profundamente que cuestionen mi autoridad o saber.",
-    "157. Siento una opresión constante en el pecho y el abdomen.",
-    "158. Me resulta muy difícil pedir ayuda cuando lo necesito.",
-    "159. Tengo la certeza de que la gente conspira contra mi felicidad.",
-    "160. Siento que las cargas de la vida superan mis fuerzas.",
-    "161. Me agrada romper las reglas establecidas solo por diversión.",
-    "162. A veces veo destellos, colores extraños o deformaciones visuales.",
-    "163. Siento una dependencia absoluta y enfermiza hacia mi pareja.",
-    "164. Me considero una persona moralmente impecable e intachable.",
-    "165. Tengo problemas graves para distinguir la fantasía de la realidad.",
-    "166. Me aterra la idea de fracasar en mis metas profesionales.",
-    "167. Siento que nadie comprende la profundidad de mi sufrimiento.",
-    "168. Me resulta muy difícil aceptar puntos de vista diferentes al mío.",
-    "169. A veces tengo visiones aterradoras cuando estoy a oscuras.",
-    "170. Siento una desgana y un desinterés absoluto por vivir.",
-    "171. Me gusta utilizar a las personas para conseguir mis fines.",
-    "172. Tengo pánico a las multitudes y a los espacios abiertos.",
-    "173. Siento que mis pensamientos se escapan de mi cabeza en voz alta.",
-    "174. Me considero una persona sumamente organizada, pulcra y correcta.",
-    "175. Siento que mi existencia carece de cualquier valor o sentido."
-]
-OPCIONES_MCMI_IV = ["Verdadero", "Falso"]
-
 MAPA_TESTS = {
     "LSB-50": {"items": ITEMS_LSB50, "opciones": OPCIONES_LSB50},
     "MMPI-2-RF": {"items": ITEMS_MMPI2RF, "opciones": None},
     "CUIDA": {"items": ITEMS_CUIDA, "opciones": OPCIONES_CUIDA},
     "STAI": {"items": ITEMS_STAI, "opciones": OPCIONES_STAI},
     "BDI-II": {"items": [item["titulo"] for item in ITEMS_BDI], "opciones": None},
-    "PAI": {"items": ITEMS_PAI, "opciones": OPCIONES_PAI},
-    "MCMI-IV": {"items": ITEMS_MCMI_IV, "opciones": None}
+    "PAI": {"items": ITEMS_PAI, "opciones": OPCIONES_PAI}
 }
 
 # -----------------------------------------------------------------------------
@@ -915,6 +740,7 @@ if st.session_state["perito_autenticado"]:
                     else:
                         st.warning("El evaluado aún no ha completado sus datos filiatorios.")
                     
+                    # Metadatos de Red y Bloque Inalterable
                     st.write(f"**Dirección IP de Acceso:** `{info.get('ip_acceso', 'N/A')}`")
                     st.write(f"**Dispositivo (User-Agent):** `{info.get('user_agent', 'N/A')}`")
                     st.write(f"**Hash del Bloque (Inalterabilidad):** `{info.get('hash_bloque', 'N/A')}`")
@@ -995,10 +821,12 @@ else:
                 del st.session_state["token_activo"]
                 st.rerun()
         else:
+            # Control Antispoofing / Aviso de cambio de IP
             ip_registrada = datos_token.get("ip_acceso")
             if ip_registrada and ip_registrada != "IP_LOCAL_O_NO_DETECTADA" and ip_registrada != ip_cliente:
                 st.warning("⚠️ **Aviso de seguridad forense:** Se detecta variación en la red de conexión respecto a la emisión inicial del token. Esta incidencia queda registrada para control de cadena de custodia.")
 
+            # PASO 2: Cargar Datos Personales
             if datos_token.get("datos_persona") is None:
                 st.subheader("Datos del Evaluado y Registro de Identidad")
                 st.write("Por favor, complete sus datos filiatorios antes de acceder a las escalas:")
@@ -1031,6 +859,7 @@ else:
                                 "hora": hora_eval,
                                 "hash_identidad": hash_generado
                             }
+                            # Fijar metadatos de red y dispositivo al token
                             datos_token["ip_acceso"] = ip_cliente
                             datos_token["user_agent"] = ua_cliente
                             
@@ -1039,6 +868,7 @@ else:
                         else:
                             st.warning("Por favor complete sus Nombre, Apellido y DNI para poder avanzar.")
             
+            # PASO 3: Selección de Cuestionarios y Escalas
             else:
                 persona = datos_token["datos_persona"]
                 hora_str = persona.get("hora", "N/A")
@@ -1066,11 +896,11 @@ else:
                             "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)",
                             "STAI (Cuestionario de Ansiedad Estado-Rasgo)",
                             "BDI-II (Inventario de Depresión de Beck)",
-                            "PAI (Inventario de Evaluación de la Personalidad)",
-                            "MCMI-IV (Inventario Clínico Multiaxial de Millon-IV)"
+                            "PAI (Inventario de Evaluación de la Personalidad)"
                         ]
                     )
                     
+                    # A) LSB-50
                     if test_seleccionado == "Listado de Síntomas Breve (LSB-50)":
                         st.subheader("Listado de Síntomas Breve (LSB-50)")
                         st.info("""
@@ -1093,6 +923,7 @@ else:
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
 
+                    # B) MMPI-2-RF
                     elif test_seleccionado == "MMPI-2-RF (Inventario Multifásico de Personalidad)":
                         st.subheader("MMPI-2-RF")
                         st.info("Marque **Verdadero** o **Falso** según corresponda a su caso habitual.")
@@ -1110,6 +941,7 @@ else:
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
 
+                    # C) CUIDA
                     elif test_seleccionado == "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)":
                         st.subheader("Cuestionario CUIDA")
                         st.info("Elija la alternativa de 1 a 4 según su grado de acuerdo.")
@@ -1128,6 +960,7 @@ else:
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
 
+                    # D) STAI
                     elif test_seleccionado == "STAI (Cuestionario de Ansiedad Estado-Rasgo)":
                         st.subheader("STAI - Cuestionario de Ansiedad Estado-Rasgo")
                         st.info("Ítems 1-20 (Estado - Ahora mismo) | Ítems 21-40 (Rasgo - En general)")
@@ -1146,6 +979,7 @@ else:
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
 
+                    # E) BDI-II
                     elif test_seleccionado == "BDI-II (Inventario de Depresión de Beck)":
                         st.subheader("BDI-II - Inventario de Depresión de Beck")
                         st.info("Seleccione la frase que mejor describa cómo se ha sentido durante las últimas dos semanas.")
@@ -1163,6 +997,7 @@ else:
                                 st.session_state["test_enviado"] = True
                                 st.rerun()
 
+                    # F) PAI
                     elif test_seleccionado == "PAI (Inventario de Evaluación de la Personalidad)":
                         st.subheader("PAI - Inventario de Evaluación de la Personalidad")
                         st.info("""
@@ -1179,23 +1014,6 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar PAI", use_container_width=True):
                                 datos_token["evaluaciones"]["PAI"] = respuestas_pai
-                                datos_token["estado"] = "finalizado"
-                                guardar_token_db(token_actual, datos_token)
-                                st.session_state["test_enviado"] = True
-                                st.rerun()
-
-                    elif test_seleccionado == "MCMI-IV (Inventario Clínico Multiaxial de Millon-IV)":
-                        st.subheader("MCMI-IV - Inventario Clínico Multiaxial de Millon-IV")
-                        st.info("Para cada una de las siguientes afirmaciones, indique si es **Verdadero** o **Falso** según su caso.")
-                        respuestas_mcmi = {}
-                        with st.form("form_mcmi_iv"):
-                            for idx, preg in enumerate(ITEMS_MCMI_IV, 1):
-                                respuestas_mcmi[f"p_{idx}"] = st.radio(
-                                    preg, options=OPCIONES_MCMI_IV, horizontal=True, key=f"mcmi_{idx}"
-                                )
-                                st.divider()
-                            if st.form_submit_button("Finalizar y Enviar MCMI-IV", use_container_width=True):
-                                datos_token["evaluaciones"]["MCMI-IV"] = respuestas_mcmi
                                 datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
