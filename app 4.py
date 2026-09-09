@@ -188,6 +188,66 @@ ITEMS_LSB50 = [
 ]
 OPCIONES_LSB50 = {0: "0 - Nada", 1: "1 - Poco", 2: "2 - Moderadamente", 3: "3 - Bastante", 4: "4 - Mucho"}
 
+ITEMS_CASULLO = [
+    "1. Enfermedad física propia, seria, importante[cite: 5]",
+    "2. Enfermedad física seria de algún hermano/a[cite: 5]",
+    "3. Enfermedad física seria del padre[cite: 5]",
+    "4. Enfermedad física seria de la madre[cite: 5]",
+    "5. Enfermedad física seria de algún amigo/a[cite: 5]",
+    "6. Problemas psicológicos personales importantes[cite: 5]",
+    "7. Enfermedad psíquica de algún hermano/a[cite: 5]",
+    "8. Enfermedad psíquica del padre[cite: 5]",
+    "9. Enfermedad psíquica de la madre[cite: 5]",
+    "10. Enfermedad psíquica de algún pariente[cite: 5]",
+    "11. Enfermedad psíquica de algún amigo/a[cite: 5]",
+    "12. Muerte del padre[cite: 5]",
+    "13. Muerte de la madre[cite: 5]",
+    "14. Muerte de algún hermano/a[cite: 5]",
+    "15. Muerte de algún abuelo[cite: 5]",
+    "16. Desaparición de algún familiar (no saber dónde está)[cite: 5]",
+    "17. Desaparición de algún amigo/a (no saber dónde está)[cite: 5]",
+    "18. Divorcio o separación de los padres[cite: 5]",
+    "19. Divorcio o separación de algún hermano/a[cite: 5]",
+    "20. Embarazo no deseado[cite: 5]",
+    "21. Aborto[cite: 5]",
+    "22. Violación[cite: 5]",
+    "23. Alguno de los padres despedido o sin empleo[cite: 5]",
+    "24. Alguna experiencia sexual desagradable, traumática[cite: 5]",
+    "25. Mudanzas[cite: 5]",
+    "26. Abuso de alcohol o drogas de algún hermano/a[cite: 5]",
+    "27. Abuso de alcohol o drogas de alguno de los padres[cite: 5]",
+    "28. Problemas personales en relación con alcohol o drogas[cite: 5]",
+    "29. Estar separado/a de un ser querido[cite: 5]",
+    "30. Muerte de algún amigo/a[cite: 5]",
+    "31. Serios problemas económicos familiares[cite: 5]",
+    "32. Problemas familiares graves[cite: 5]",
+    "33. Problemas personales con algún docente[cite: 5]",
+    "34. Problemas para aprender en la escuela[cite: 5]",
+    "35. Ruptura de noviazgo o pareja[cite: 5]",
+    "36. Problemas que implicaron la participación de la policía[cite: 5]",
+    "37. Dificultades para tener amigos/as[cite: 5]",
+    "38. Problemas de fe (crisis religiosa)[cite: 5]",
+    "39. Haber sufrido un accidente serio[cite: 5]",
+    "40. Intentar quitarme la vida[cite: 5]",
+    "41. Divorcio o separación personal[cite: 5]",
+    "42. Tener dificultades para formar pareja[cite: 5]",
+    "43. Tener dificultades para conseguir trabajo[cite: 5]",
+    "44. Confusión vocacional, no saber qué estudiar[cite: 5]",
+    "45. Problemas de disciplina en la escuela[cite: 5]",
+    "46. Sentirme amenazado/a o perseguido/a por alguien[cite: 5]",
+    "47. No poder conservar por mucho tiempo un trabajo[cite: 5]",
+    "48. Enterarme de que me adoptaron[cite: 5]",
+    "49. Haber sido golpeado/a, duramente castigado/a[cite: 5]",
+    "50. Haber pensado en quitarme la vida[cite: 5]"
+]
+OPCIONES_CASULLO = {
+    1: "1 - Nada",
+    2: "2 - Poco",
+    3: "3 - Algo",
+    4: "4 - Bastante",
+    5: "5 - Mucho"
+}
+
 ITEMS_MMPI2RF = [
     "1. Me gustan las revistas de mecánica.",
     "2. Tengo buen apetito.",
@@ -1015,6 +1075,7 @@ OPCIONES_PAI = {
 
 MAPA_TESTS = {
     "LSB-50": {"items": ITEMS_LSB50, "opciones": OPCIONES_LSB50},
+    "Escala de Sucesos de Vida (Casullo)": {"items": ITEMS_CASULLO, "opciones": OPCIONES_CASULLO},
     "MMPI-2-RF": {"items": ITEMS_MMPI2RF, "opciones": None},
     "CUIDA": {"items": ITEMS_CUIDA, "opciones": OPCIONES_CUIDA},
     "STAI": {"items": ITEMS_STAI, "opciones": OPCIONES_STAI},
@@ -1304,6 +1365,7 @@ else:
                         [
                             "-- Seleccione una opción --", 
                             "Listado de Síntomas Breve (LSB-50)", 
+                            "Escala de Sucesos de Vida (Casullo)",
                             "MMPI-2-RF (Inventario Multifásico de Personalidad)",
                             "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y Mediadores)",
                             "STAI (Cuestionario de Ansiedad Estado-Rasgo)",
@@ -1330,6 +1392,32 @@ else:
                                 st.divider()
                             if st.form_submit_button("Finalizar y Enviar LSB-50", use_container_width=True):
                                 datos_token["evaluaciones"]["LSB-50"] = respuestas_lsb
+                                datos_token["estado"] = "finalizado"
+                                guardar_token_db(token_actual, datos_token)
+                                st.session_state["test_enviado"] = True
+                                st.rerun()
+
+                    # Escala de Sucesos de Vida (Casullo)
+                    elif test_seleccionado == "Escala de Sucesos de Vida (Casullo)":
+                        st.subheader("Escala de Sucesos de Vida (M. M. Casullo)")
+                        st.info("""
+                        **Instrucciones oficiales:**
+                        A continuación le presentamos una lista con experiencias de vida importantes. Si algunas de ellas le han pasado, por favor, señálelas tratando de asignarles un valor entre 1 y 5, teniendo en cuenta cuánto considera que le afectaron.
+                        * **1** = Nada | **2** = Poco | **3** = Algo | **4** = Bastante | **5** = Mucho
+                        """)
+                        respuestas_casullo = {}
+                        with st.form("form_casullo"):
+                            for idx, preg in enumerate(ITEMS_CASULLO, 1):
+                                st.markdown(f"**{preg}**")
+                                val = st.radio(
+                                    f"Valor asignado para: {preg}", options=list(OPCIONES_CASULLO.keys()),
+                                    format_func=lambda x: OPCIONES_CASULLO[x], horizontal=True, key=f"casullo_val_{idx}"
+                                )
+                                sigue = st.checkbox("Sigue afectando (ocurrido último año y sigue afectando)", key=f"casullo_sigue_{idx}")
+                                respuestas_casullo[f"p_{idx}"] = {"valor": val, "sigue_afectando": sigue}
+                                st.divider()
+                            if st.form_submit_button("Finalizar y Enviar Escala de Casullo", use_container_width=True):
+                                datos_token["evaluaciones"]["Escala de Sucesos de Vida (Casullo)"] = respuestas_casullo
                                 datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
                                 st.session_state["test_enviado"] = True
@@ -1428,7 +1516,7 @@ else:
                                     format_func=lambda x: OPCIONES_PAI[x], horizontal=True, key=f"pai_{idx}"
                                 )
                                 st.divider()
-                            if st.form_submit_button("Finalizar y Enviar PAI", use_container_width=True):
+                            if st.form_submit_button("Finalizar y Enviar PAI", use_keyword=True, use_container_width=True):
                                 datos_token["evaluaciones"]["PAI"] = respuestas_pai
                                 datos_token["estado"] = "finalizado"
                                 guardar_token_db(token_actual, datos_token)
