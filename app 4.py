@@ -1006,7 +1006,12 @@ ITEMS_PAI = [
     "343. Pongo mucho cuidado en la forma de gastar el dinero.",
     "344. Casi nunca estoy de mal humor."
 ]
-OPCIONES_MMPI = ["Verdadero", "Falso"]
+OPCIONES_PAI = {
+    "F": "F - Falso",
+    "LV": "LV - Ligeramente verdadero",
+    "BV": "BV - Bastante verdadero",
+    "CV": "CV - Completamente verdadero"
+}
 
 MAPA_TESTS = {
     "LSB-50": {"items": ITEMS_LSB50, "opciones": OPCIONES_LSB50},
