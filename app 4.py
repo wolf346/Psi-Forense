@@ -132,7 +132,7 @@ def generar_token_unico(longitud=6):
     return f"EVAL-{codigo}"
 
 # -----------------------------------------------------------------------------
-# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS
+# 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS (MMPI-2-RF OFICIAL 338 ÍTEMS)
 # -----------------------------------------------------------------------------
 ITEMS_LSB50 = [
     "1. Mi corazón palpita o va muy deprisa.",
@@ -189,120 +189,344 @@ ITEMS_LSB50 = [
 OPCIONES_LSB50 = {0: "0 - Nada", 1: "1 - Poco", 2: "2 - Moderadamente", 3: "3 - Bastante", 4: "4 - Mucho"}
 
 ITEMS_MMPI2RF = [
-    "1. Me gustan las revistas de mecánica.", "2. Tengo buen apetito.", "3. Me despierto fresco y descansado casi todas las mañanas.",
-    "4. Creo que me gustaría el trabajo de bibliotecario.", "5. El ruido me despierta fácilmente.", "6. Mi padre es un buen hombre, o lo fue.",
-    "7. Me gusta leer artículos sobre el crimen en los periódicos.", "8. Mis manos y pies suelen estar lo suficientemente calientes.",
-    "9. Mi vida diaria está llena de cosas que mantienen mi interés.", "10. Actualmente soy tan capaz para trabajar como lo he sido siempre.",
-    "11. Siento un nudo en la garganta la mayor parte del tiempo.", "12. Mi vida sexual es satisfactoria.", "13. La gente debería intentar comprender sus sueños.",
-    "14. Me molestan las náuseas y los vómitos.", "15. A veces me dan ganas de maldecir.", "16. Encuentro difícil concentrarme en una tarea.",
-    "17. He tenido experiencias muy raras y extrañas.", "18. Rara vez me preocupo por mi salud.", "19. Nunca me he metido en problemas por mi comportamiento sexual.",
-    "20. A veces tengo ganas de romper cosas.", "21. Tengo periodos de días, semanas o meses en que no puedo hacer nada.", "22. Mi sueño es variable e inquieto.",
-    "23. Gran parte del tiempo me parece que me duele la cabeza por todas partes.", "24. A veces digo mentiras.", "25. Soy más sensitive que la mayoría de la gente.",
-    "26. A veces siento que debería hacer algo para dañarme a mí mismo.", "27. Mi salud física es tan buena como la de la mayoría de mis amigos.",
-    "28. Nunca he tenido parálisis o debilidad muscular insólita.", "29. A veces me parece que mi mente funciona más despacio de lo habitual.",
-    "30. La mayor parte del tiempo me siento feliz.", "31. Siento que la gente lee mis pensamientos.", "32. Me gustaría ser cantante.",
-    "33. Creo que la mayoría de la gente mentiría para salir de un problema.", "34. Tengo pocos dolores de cabeza.", "35. A veces pierdo el control de mis actos.",
-    "36. Mi conducta está guiada principalmente por las costumbres de quienes me rodean.", "37. Me enfado a veces.", "38. Casi todo me da asco.",
-    "39. Soy una persona muy ansiosa.", "40. Creo que me están siguiendo.", "41. La gente me decepciona a menudo.",
-    "42. Disfruto de las reuniones sociales.", "43. Siento molestias en la parte superior del abdomen.", "44. Tengo periodos en los que me siento inusualmente alegre sin motivo.",
-    "45. Mi memoria parece estar bien.", "46. Me preocupa bastante el dinero.", "47. Me molesta que la gente me pida consejo.",
-    "48. Veo cosas, animales o personas que otros no ven.", "49. Tengo dificultades para mantener el equilibrio al caminar.", "50. Me irrita fácilmente la gente.",
-    "51. Quisiera no ser tan tímido.", "52. Disfruto de la compañía de los demás.", "53. Tengo ganas de rendirme fácilmente.",
-    "54. A veces escucho voces y no sé de dónde vienen.", "55. Me cuesta concentrarme.", "56. Me siento acorralado por las circunstancias.",
-    "57. Me gusta la emoción y la aventura.", "58. Tengo problemas de digestión.", "59. Siento que la familia no me apoya.",
-    "60. A veces pierdo el sentido del tiempo.", "61. Me cuesta hacer amigos.", "62. Siento que no valgo para nada.",
-    "63. Sufro de ataques de pánico repentinos.", "64. Me gusta cocinar.", "65. Siento que la gente habla a mis espaldas.",
-    "66. Duermo profundamente toda la noche.", "67. A veces me siento lleno de energía.", "68. Me molesta estar en lugares cerrados.",
-    "69. A menudo actúo sin pensar.", "70. Pienso que la vida no vale la pena.", "71. Me agradan los niños.",
-    "72. Tengo sensaciones extrañas en la piel.", "73. Me siento seguro al tomar decisiones.", "74. Me cuesta expresar mis sentimientos.",
-    "75. Me molesta que cuestionen mis intenciones.", "76. Sufro de temblores en las manos.", "77. Disfruto de la lectura.",
-    "78. Me siento distante de los demás.", "79. Me preocupo constantemente por el futuro.", "80. Siento que el mundo está en mi contra.",
-    "81. Me molesta el desorden.", "82. Tengo una vida social muy activa.", "83. Me cuesta conciliar el sueño.",
-    "84. A veces me siento impulsado a hacer cosas peligrosas.", "85. Confío plenamente en la gente.", "86. Me canso con facilidad.",
-    "87. Me gusta planificar mis tareas con anticipación.", "88. Siento opresión en el pecho.", "89. Pienso que las personas son egoístas por naturaleza.",
-    "90. Me resulta fácil adaptarme a situaciones nuevas.", "91. Tengo visiones borrosas con frecuencia.", "92. Siento arrepentimiento constante.",
-    "93. Me molesta la crítica constructiva.", "94. Me siento lleno de vida y entusiasmo.", "95. Siento que alguien intenta controlar mi mente.",
-    "96. Me cuesta pedir ayuda a los demás.", "97. Sufro de mareos repentinos.", "98. Me siento en paz conmigo mismo.",
-    "99. A veces siento mucha rabia contenida.", "100. Disfruto de actividades al aire libre.", "101. Siento que nada me satisface.",
-    "102. Me preocupa cometer errores en público.", "103. Siento dolor en las articulaciones.", "104. Me resulta sencillo iniciar conversaciones.",
-    "105. Me cuesta trabajo mantener el interés en un proyecto.", "106. Creo que la gente abusa de mi confianza.", "107. Me siento triste la mayor parte del tiempo.",
-    "108. Me agrada el trabajo en equipo.", "109. Sufro de sudoración excessive.", "110. Me cuesta olvidar ofensas pasadas.",
-    "111. Siento que todo me sale mal.", "112. Tengo facilidad para el arte.", "113. A veces oigo zumbidos en los oídos.",
-    "114. Siento mucha presión en mi entorno laboral o personal.", "115. Me agrada la rutina diaria.", "116. Pienso que las normas deben seguirse strictly.",
-    "117. Me cuesta estar tranquilo en un solo lugar.", "118. Siento que la gente me juzga negativamente.", "119. Me despierto antes de tiempo y no puedo volver a dormir.",
-    "120. Me gusta hacer deportes.", "121. Me distraigo con suma facilidad.", "122. Me resulta difícil tomar la iniciativa.",
-    "123. Siento hormigueo en mis extremidades.", "124. Disfruto ayudando a personas necesitadas.", "125. Pienso que no hay esperanzas de mejorar.",
-    "126. A veces me siento demasiado impulsivo.", "127. Me molesta la impuntualidad.", "128. Me siento querido por mi familia.",
-    "129. Siento punzadas de dolor sin causa física.", "130. Me cuesta aceptar las derrotas.", "131. Pienso con claridad la mayor parte del tiempo.",
-    "132. Me agrada asistir a teatro o conciertos.", "133. Siento que los demás reciben más de lo que merecen.", "134. Tengo dificultades para respirar con normalidad.",
-    "135. Me siento incapaz de resolver mis dilemas.", "136. A veces lloro sin motivo aparente.", "137. Me agrada la investigación científica.",
-    "138. Siento que mi mente está llena de pensamientos confusos.", "139. Me molesta que me interrumpan.", "140. Me siento orgulloso de mis logros.",
-    "141. Sufro de accesos de tos raras.", "142. Me resulta fácil confiar en mis capacidades.", "143. Me cuesta mostrar afecto hacia los demás.",
-    "144. Siento que la suerte jamás me acompaña.", "145. Me atraen las actividades de riesgo.", "146. Tengo estreñimiento o malestar intestinal.",
-    "147. Me alegra el éxito de mis amigos.", "148. Me cuesta aceptar cuando cometo un fallo.", "149. Siento miedo en lugares concurridos.",
-    "150. Disfruto resolviendo acertijos.", "151. Siento una tensión constante en el cuello.", "152. Me cuesta ponerme en el lugar de otros.",
-    "153. A veces me imagino escenarios catastróficos.", "154. Me siento pleno con my trabajo o estudio.", "155. Siento que la gente me evita.",
-    "156. Tengo sequedad frecuente en la boca.", "157. Me agrada conocer costumbres distintas.", "158. Me cuesta mantener una disciplina constante.",
-    "159. Siento frustración muy rápidamente.", "160. Me despierto con sensación de ahogo.", "161. Me siento optimista frente al futuro.",
-    "162. A veces pierdo el apetito por completo.", "163. Me molesta el ruido fuerte.", "164. Siento que nadie me comprende del todo.",
-    "165. Me resulta fácil aprender cosas nuevas.", "166. Tengo calambres musculares con frecuencia.", "167. Me cuesta delegar responsabilidades.",
-    "168. Siento que pierdo el tiempo a menudo.", "169. Me agradan las labores mecánicas.", "170. Siento latidos acelerados del corazón en reposo.",
-    "171. Me cuesta perdonar mis propios errores.", "172. A veces me asalta una profunda tristeza.", "173. Me siento cómodo ante figuras de autoridad.",
-    "174. Siento picazón molesta en la piel.", "175. Disfruto de conversaciones profundas.", "176. Me cuesta adaptarme a imprevistos.",
-    "177. Siento que me exigen demasiado.", "178. Me desagrada hablar ante un público numeroso.", "179. Tengo episodios de debilidad repentina.",
-    "180. Me considero una persona calmada.", "181. Siento que la felicidad es inalcanzable para mí.", "182. Me molesta que impongan reglas arbitrarias.",
-    "183. Disfruto coleccionar objetos.", "184. Siento opresión en la cabeza.", "185. Me cuesta expresar desacuerdo con los demás.",
-    "186. A veces me cuesta reconocer a personas conocidas.", "187. Me siento satisfecho con mi apariencia.", "188. Siento que los demás son más astutos que yo.",
-    "189. Tengo problemas al tragar alimentos.", "190. Me apasiona aprender idiomas.", "191. Me cuesta concentrarse cuando hay distracciones.",
-    "192. Siento que la culpa no me deja en paz.", "193. Me agrada hacer plans a largo plazo.", "194. Sufro de dolores de espalda punzantes.",
-    "195. Me cuesta trabajo decir que no.", "196. A veces imagino cosas que no son reales.", "197. Me siento motivado día a día.",
-    "198. Siento que la competencia me abruma.", "199. Tengo acidez estomacal constante.", "200. Me gusta la jardinería.",
-    "201. Me cuesta controlar mis pensamientos negativos.", "202. Siento que los demás se aprovechan de mí.", "203. Me agrada la soledad en su justa medida.",
-    "204. Siento pesadez en las extremidades.", "205. Me resulta difícil admitir mis flaquezas.", "206. A veces pierdo la noción de dónde estoy.",
-    "207. Me siento respaldado por mi círculo cercano.", "208. Siento envidia del éxito ajeno.", "209. Tengo espasmos oculares molestos.",
-    "210. Me atrae la historia antigua.", "211. Me cuesta trabajo establecer prioridades.", "212. Siento que la desesperanza me domina.",
-    "213. Me siento capaz de liderar grupos.", "214. Sufro de escalofríos repentinos.", "215. Me cuesta confiar en mis propias decisiones.",
-    "216. A veces siento sospechas infundadas.", "217. Me gratifica realizar trabajo comunitario.", "218. Siento ardor en los ojos frecuentemente.",
-    "219. Me cuesta mantener un horario regular.", "220. Siento que la suerte nunca está de mi lado.", "221. Disfruto de la música clásica.",
-    "222. Siento rigidez muscular en los hombros.", "223. Me cuesta expresar gratitud.", "224. A veces me sobrecoge la soledad.",
-    "225. Me siento valorado por mi entorno.", "226. Siento punzadas de malestar general.", "227. Me resulta difícil perdonar la deslealtad.",
-    "228. A veces actuaría impulsivamente si no me contuviera.", "229. Me agrada ver documentales educacionales.", "230. Siento latidos irregulares en el pecho.",
-    "231. Me cuesta encontrar sentido a la rutina.", "232. Siento que mis metas son alcanzables.", "233. Tengo molestias frecuentes en la garganta.",
-    "234. Me cuesta reaccionar con rapidez ante emergencias.", "235. A veces siento una desconexión con la realidad.", "236. Me satisface ayudar a la familia.",
-    "237. Siento insensibilidad en partes de mi piel.", "238. Me resulta molesto recibir órdenes.", "239. Me abruma el ritmo acelerado de la sociedad.",
-    "240. Disfruto de pasear por la naturaleza.", "241. Siento punzadas en el costado.", "242. Me cuesta reponerme tras una pérdida.",
-    "243. Siento que los demás tienen malas intenciones.", "244. Me resulta fácil conservar la compostura.", "245. Tengo pérdida momentánea de audición.",
-    "246. Me motiva superar desafíos complejos.", "247. Me cuesta conectar con personas desconocidas.", "248. Siento frustración por no alcanzar la perfección.",
-    "249. Me gusta ver eventos deportivos.", "250. Siento ardor de estómago por la noche.", "251. Me resulta complicado tomar iniciativa en grupo.",
-    "252. Siento que el pesimismo me abruma.", "253. Me siento agradecido por las oportunidades.", "254. Sufro de cosquilleo continuo en los dedos.",
-    "255. Me cuesta trabajo perdonar faltas menores.", "256. A veces pierdo el control emocional brevemente.", "257. Me complace mantener un hogar ordenado.",
-    "258. Siento fatiga sin haber hecho esfuerzo.", "259. Me cuesta adaptarme a directrices estrictas.", "260. Siento que my opiniones no cuentan.",
-    "261. Disfruto del trabajo artesanal.", "262. Siento palpitaciones al enfrentar problemas.", "263. Me resulta complejo expresar afecto físico.",
-    "264. Siento insatisfacción constante.", "265. Me agrada participar en proyectos cívicos.", "266. Tengo pesadez de párpados continua.",
-    "267. Me cuesta trabajo seguir instrucciones paso a paso.", "268. A veces dudo de mi propia identidad.", "269. Me siento seguro frente a nuevos proyectos.",
-    "270. Siento envidia incontenible por los logros ajenos.", "271. Sufro de rigidez en la mandíbula.", "272. Me apasiona la lectura de biografías.",
-    "273. Me resulta complejo manejar la crítica.", "274. Siento que la angustia me paraliza.", "275. Me considero una persona empática.",
-    "276. Siento molestias en las articulaciones al despertar.", "277. Me cuesta integrarme a grupos consolidados.", "278. A veces reacciono de forma desmedida.",
-    "279. Me gratifica aprender nuevas tecnologías.", "280. Siento vértigo al mirar desde las alturas.", "281. Me resulta difícil superar ofensas pasadas.",
-    "282. Siento un vacío profundo a menudo.", "283. Me alegra poder orientar a otros.", "284. Tengo episodios de visión doble.",
-    "285. Me cuesta trabajo establecer límites.", "286. A veces me asalta una euforia desmedida.", "287. Me siento cómodo en ambientes estructurados.",
-    "288. Siento constante inquietud en las piernas.", "289. Me resulta duro admitir mis errores.", "290. Siento que la suerte nunca está de mi lado.",
-    "291. Disfruto del cine dramático.", "292. Siento presión constante en la frente.", "293. Me cuesta empatizar con quienes sufren.",
-    "294. Siento que no tengo el control de mi destino.", "295. Me siento capaz de resolver crisis cotidianas.", "296. Sufro de sequedad de piel insoportable.",
-    "297. Me cuesta trabajo pedir perdón.", "298. A veces experimento cambios bruscos de humor.", "299. Me resulta gratificante la tranquilidad del hogar.",
-    "300. Siento ahogo en espacios reducidos.", "301. Me cuesta confiar en desconocidos.", "302. Siento que mi aporte no tiene valor.",
-    "303. Disfruto descubriendo nuevos lugares.", "304. Siento punzadas de molestia en los oídos.", "305. Me cuesta trabajo delegar tareas importantes.",
-    "306. A veces me invaden recuerdos del pasado sin querer.", "307. Me siento tranquilo ante los cambios.", "308. Siento irritación por pequeñas faltas ajenas.",
-    "309. Sufro de malestar estomacal ante los nervios.", "310. Me interesa la política internacional.", "311. Me resulta complejo expresar gratitud de corazón.",
-    "312. Siento que nada tiene sentido en mi entorno.", "313. Me siento satisfecho con mi desempeño general.", "314. Tengo pérdida de sensibilidad táctil temporal.",
-    "315. Me cuesta trabajo cumplir horarios estrictos.", "316. A veces prefiero aislarme por completo.", "317. Me agrada mantener limpia mi zona de trabajo.",
-    "318. Siento tensión muscular en la espalda baja.", "319. Me resulta difícil aceptar consejos no solicitados.", "320. Siento que el pesimismo me bloquea.",
-    "321. Disfruto participando en actividades grupales.", "322. Siento punzadas de dolor en la sien.", "323. Me cuesta trabajo superar fracasos pasados.",
-    "324. A veces imagino situaciones inexistentes.", "325. Me siento seguro al asumir riesgos calculados.", "326. Sufro de zumbidos repentinos en los oídos.",
-    "327. Me resulta complejo perdonar agravios.", "328. Siento un agotamiento permanente.", "329. Me agrada cuidar el entorno natural.",
-    "330. Siento ardor persistente en la piel.", "331. Me cuesta trabajo establecer prioridades claras.", "332. A veces dudo de mis convicciones más profundas.",
-    "333. Me siento respetado por mis semejantes.", "334. Siento envidia irracional.", "335. Sufro de malestar articular intermitente.",
-    "336. Me atrae la literatura filosófica.", "337. Me resulta difícil admitir derrotas.", "338. Siento que my vida tiene un propósito claro."
+    "1. Me gustan las revistas de mecánica.",[cite: 4]
+    "2. Tengo buen apetito.",[cite: 4]
+    "3. Creo que me gustaría el trabajo de bibliotecario.",[cite: 4]
+    "4. Mi vida diaria está llena de cosas que mantienen mi interés.",[cite: 4]
+    "5. A veces he sentido un intenso deseo de abandonar mi hogar.",[cite: 4]
+    "6. Tengo dificultades para concentrarme en una tarea o trabajo.",[cite: 4]
+    "7. Mi madre es una buena mujer. (O si su madre ha fallecido) Mi madre era una buena mujer.",[cite: 4]
+    "8. Encuentro alivio cuando comparto mis problemas con alguien.",[cite: 4]
+    "9. A menudo me he sentido culpable porque he fingido mayor pesar del que realmente sentía.",[cite: 4]
+    "10. Cuesta mucho trabajo convencer a la mayoría de la gente de la verdad.",[cite: 4]
+    "11. Me gusta muchísimo ir a bailes.",[cite: 4]
+    "12. Frecuentemente siento que puedo leer la mente de otras personas.",[cite: 4]
+    "13. Algunas veces me empeño tanto en algo que las personas pierden la paciencia conmigo.",[cite: 4]
+    "14. En ocasiones los espíritus malignos se posesionan de mí.",[cite: 4]
+    "15. Siento un nudo en la garganta casi todo el tiempo.",[cite: 4]
+    "16. En ocasiones siento deseos de maldecir.",[cite: 4]
+    "17. Soy una persona muy sociable.",[cite: 4]
+    "18. Siento debilidad general la mayor parte del tiempo.",[cite: 4]
+    "19. Los miembros de mi familia y mis parientes más cercanos se llevan bastante bien.",[cite: 4]
+    "20. Me siento incómodo(a) cuando estoy en lugares cerrados.",[cite: 4]
+    "21. Cuando era más joven, a veces robé algunas cosas.",[cite: 4]
+    "22. Quisiera poder ser tan feliz como parecen serlo otras personas.",[cite: 4]
+    "23. A veces siento ganas de destrozar las cosas.",[cite: 4]
+    "24. Pierdo fácilmente las discusiones.",[cite: 4]
+    "25. Actualmente estoy tan capacitado(a) para trabajar como siempre lo he estado.",[cite: 4]
+    "26. Por principio, cuando alguien me hace algún mal siento que, de ser posible, debería pagarle con la misma moneda.",[cite: 4]
+    "27. Muchas veces he perdido oportunidades por no haberme decidido a tiempo.",[cite: 4]
+    "28. Por lo general tengo las manos y los pies lo suficientemente calientes.",[cite: 4]
+    "29. Tiendo a tomar los desengaños tan a pecho que no puedo dejar de pensar en ellos.",[cite: 4]
+    "30. La mayor parte del tiempo me siento triste.",[cite: 4]
+    "31. No entiendo lo que leo tan bien como antes.",[cite: 4]
+    "32. He tenido experiencias muy peculiares y extrañas.",[cite: 4]
+    "33. Casi siempre tengo tos.",[cite: 4]
+    "34. Los fantasmas o los espíritus pueden influir en las personas para bien o para mal.",[cite: 4]
+    "35. Frecuentemente tengo que esforzarme para no demostrar que soy tímido(a).",[cite: 4]
+    "36. Creo que mucha gente exagera sus desgracias para que los demás se compadezcan de ellos y les ayuden.",[cite: 4]
+    "37. Las personas no lastiman mis sentimientos fácilmente.",[cite: 4]
+    "38. Nunca he tenido dificultades a causa de mi conducta sexual.",[cite: 4]
+    "39. Con frecuencia he tenido que recibir órdenes de personas que sabían menos que yo.",[cite: 4]
+    "40. Casi siempre preferiría soñar despierto en lugar de hacer otra cosa.",[cite: 4]
+    "41. Algunas veces me gusta herir a las personas que quiero.",[cite: 4]
+    "42. Me gustaría ser soldado.",[cite: 4]
+    "43. Sufro ataques de náusea y de vómito.",[cite: 4]
+    "44. Me cuesta trabajo entablar una conversación con alguien que acabo de conocer.",[cite: 4]
+    "45. No siempre digo la verdad.",[cite: 4]
+    "46. Cuando estoy con gente me molesta oir cosas muy extrañas.",[cite: 4]
+    "47. Me gusta ir a fiestas y reuniones alegres y bulliciosas.",[cite: 4]
+    "48. Definitivamente no tengo confianza en mí mismo.",[cite: 4]
+    "49. He disfrutado fumando marihuana.",[cite: 4]
+    "50. Me gustaría ser cantante.",[cite: 4]
+    "51. He tenido miedo de cosas o personas que sabia que no podían hacerme daño.",[cite: 4]
+    "52. Muy raras veces padezco estreñimiento.",[cite: 4]
+    "53. A veces me siento lleno(a) de energía.",[cite: 4]
+    "54. Temo a los relámpagos.",[cite: 4]
+    "55. Creo que la mayoría de la gente mentiría para salir adelante.",[cite: 4]
+    "56. Me pongo nervioso(a) y preocupado(a) cuando tengo que salir de casa para hacer un viaje corto.",[cite: 4]
+    "57. Me gustan las reuniones sociales sólo por estar con la gente.",[cite: 4]
+    "58. Algunos de mis familiares tienen hábitos que me molestan o irritan mucho.",[cite: 4]
+    "59. Mi memoria parece estar en buenas condiciones.",[cite: 4]
+    "60. Con frecuencia siento la necesidad de luchar por lo que creo justo.",[cite: 4]
+    "61. Nunca he hecho algo peligroso sólo por el gusto de hacerlo.",[cite: 4]
+    "62. Hago muchas cosas de las que luego me arrepiento. (Me arrepiento más o más frecuentemente que otras personas de las cosas que hago).",[cite: 4]
+    "63. Con frecuencia me ha parecido que algún extraño me miraba críticamente.",[cite: 4]
+    "64. Soy una persona importante.",[cite: 4]
+    "65. Casi nunca me ha dolido el corazón o el pecho.",[cite: 4]
+    "66. En la escuela algunas veces me llevaron ante el director por mala conducta.",[cite: 4]
+    "67. No me gusta tener gente a mi alrededor.",[cite: 4]
+    "68. Generalmente tengo que detenerme a pensar antes de hacer algo, aunque sea un asunto sin importancia.",[cite: 4]
+    "69. Mis manos no se han entorpecido ni perdido habilidad.",[cite: 4]
+    "70. No leo diariamente todos los artículos editoriales del periódico.",[cite: 4]
+    "71. Creo que están conspirando contra mí.",[cite: 4]
+    "72. A veces mis pensamientos han pasado por mi mente con tanta rapidez que no he podido expresarlos en palabras.",[cite: 4]
+    "73. No creo ser más nervioso(a) que la mayoría de las personas.",[cite: 4]
+    "74. Muchas veces tengo la sensación de haber hecho algo malo o diabólico.",[cite: 4]
+    "75. Creo que me gustaría trabajar como guardabosques.",[cite: 4]
+    "76. Padezco problemas estomacales varias veces a la semana.",[cite: 4]
+    "77. Soy tan susceptible respecto a algunos temas que ni siquiera puedo hablar de ellos.",[cite: 4]
+    "78. Aparentemente oigo tan bien como la mayoría de las personas.",[cite: 4]
+    "79. Tengo pesadillas varias veces a la semana.",[cite: 4]
+    "80. Tengo pocos disgustos con miembros de mi familia.",[cite: 4]
+    "81. A veces me dan ataques de risa o de llanto que no puedo controlar.",[cite: 4]
+    "82. No le tengo mucho miedo a las serpientes.",[cite: 4]
+    "83. Generalmente siento que la vida vale la pena.",[cite: 4]
+    "84. A veces siento deseos de empezar peleas a golpes.",[cite: 4]
+    "85. Nunca he tenido una visión.",[cite: 4]
+    "86. Solamente puedo expresar lo que en verdad siento, cuando tomo.",[cite: 4]
+    "87. La mayor parte de la gente es honrada principalmente por temor a ser descubierta.",[cite: 4]
+    "88. Muy raras veces siento dolor en la nuca.",[cite: 4]
+    "89. Definitivamente, a veces me siento un inútil.",[cite: 4]
+    "90. Temo encontrarme encerrado(a) en un ropero o en un lugar pequeño y cerrado.",[cite: 4]
+    "91. Me avergüenzo muy fácilmente.",[cite: 4]
+    "92. Creo que me están siguiendo.",[cite: 4]
+    "93. Recientemente he pensado en matarme.",[cite: 4]
+    "94. No me molesta conocer a personas extrañas.",[cite: 4]
+    "95. De vez en cuando dejo para mañana lo que debiera hacer hoy.",[cite: 4]
+    "96. A menudo mis padres se oponían a la clase de gente que frecuentaba.",[cite: 4]
+    "97. Me gusta conocer a gente importante porque eso me hace sentir importante.",[cite: 4]
+    "98. Quiero a mi padre. (O si su padre ha fallecido) Quise a mi padre.",[cite: 4]
+    "99. La mayor parte de la gente usaría medios injustos con tal de obtener lo que quiere.",[cite: 4]
+    "100. Me gusta la poesía.",[cite: 4]
+    "101. Muchas veces siento que me duele toda la cabeza.",[cite: 4]
+    "102. Me parece que soy tan listo(a) y capaz como la mayoría de los que me rodean.",[cite: 4]
+    "103. De vez en cuando siento odio hacia los miembros de mi familia a los que usualmente quiero.",[cite: 4]
+    "104. Generalmente defiendo con tenacidad mis propias opiniones.",[cite: 4]
+    "105. Casi siempre estoy feliz.",[cite: 4]
+    "106. He tenido épocas durante las cuales he hecho cosas que luego no recuerdo haber hecho.",[cite: 4]
+    "107. Me gusta hablar sobre temas sexuales.",[cite: 4]
+    "108. En varias ocasiones he dejado de hacer algo porque he dudado de mi habilidad.",[cite: 4]
+    "109. Disfruto con el alboroto de una multitud.",[cite: 4]
+    "110. Siento que frecuentemente he sido castigado(a) sin motivo.",[cite: 4]
+    "111. Me gusta coquetear.",[cite: 4]
+    "112. Creo que me gustaría el trabajo de contratista de obras.",[cite: 4]
+    "113. Tiendo a dejar de hacer algo que deseo cuando los demás piensan que esa no es la manera correcta de hacerlo.",[cite: 4]
+    "114. Casi nunca tengo calambres o dolores musculares.",[cite: 4]
+    "115. Desearía no ser tan tímido(a).",[cite: 4]
+    "116. No le temo al fuego.",[cite: 4]
+    "117. Tengo la tendencia a tomar las cosas muy en serio.",[cite: 4]
+    "118. Algo anda mal en mi mente.",[cite: 4]
+    "119. Pierdo fácilmente la paciencia con la gente.",[cite: 4]
+    "120. La mayor parte del tiempo desearía estar muerto(a).",[cite: 4]
+    "121. Es más seguro no confiar en nadie.",[cite: 4]
+    "122. He tenido ataques durante los cuales no podía controlar el habla o los movimientos, pero me daba cuenta de lo que ocurria a mi alrededor.",[cite: 4]
+    "123. Me preocupo mucho por posibles desgracias.",[cite: 4]
+    "124. Nunca he estado enamorado(a) de alguien.",[cite: 4]
+    "125. Mi manera de hablar es la misma de siempre (ni más rápida, ni más lenta, ni balbuceante, ni ronca).",[cite: 4]
+    "126. Me gustaba la escuela.",[cite: 4]
+    "127. Algunas veces me enojo.",[cite: 4]
+    "128. No tengo miedo de manejar dinero.",[cite: 4]
+    "129. Alguien ha intentado envenenarme.",[cite: 4]
+    "130. Me preocupo mucho.",[cite: 4]
+    "131. Cuando me aburro me gusta provocar algo emocionante o divertido.",[cite: 4]
+    "132. Con frecuencia cruzo la calle para evitar encontrarme con alguien que veo venir.",[cite: 4]
+    "133. Todo me sabe igual.",[cite: 4]
+    "134. No me enojo fácilmente.",[cite: 4]
+    "135. Me molesta mucho pensar en hacer cambios en mi vida.",[cite: 4]
+    "136. No me puedo concentrar en una sola cosa.",[cite: 4]
+    "137. Me parece tener la cabeza o la nariz congestionada la mayor parte del tiempo.",[cite: 4]
+    "138. Mis padres y familiares me encuentran más fallas de las que debieran.",[cite: 4]
+    "139. Frecuentemente oigo voces sin saber de dónde vienen.",[cite: 4]
+    "140. Disfruto de distintas clases de juegos y diversiones.",[cite: 4]
+    "141. He bebido alcohol con exceso.",[cite: 4]
+    "142. La mayoría de las personas hace amistades porque los amigos les pueden resultar útiles en algún momento.",[cite: 4]
+    "143. Algunas veces he sido un obstáculo para personas que querían hacer algo, no porque eso fuera importante, sino por cuestión de principios.",[cite: 4]
+    "144. Se me dificulta comenzar a hacer las cosas.",[cite: 4]
+    "145. Me gustaría ser florista.",[cite: 4]
+    "146. Casi todos los días sucede algo que me asusta.",[cite: 4]
+    "147. Me gusta hacerle saber a la gente mi punto de vista sobre las cosas.",[cite: 4]
+    "148. Me gusta mucho cazar.",[cite: 4]
+    "149. Algunas veces me vienen a la mente pensamientos sin importancia que me molestan por días.",[cite: 4]
+    "150. Alguien ha estado intentando robarme.",[cite: 4]
+    "151. Le tengo terror a los huracanes.",[cite: 4]
+    "152. Me rindo fácilmente cuando las cosas van mal.",[cite: 4]
+    "153. Mis preocupaciones parecen desaparecer cuando estoy con un grupo de amigos(as) animados(as).",[cite: 4]
+    "154. Mis modales en la mesa no son tan buenos en casa como cuando salgo a comer con otras personas.",[cite: 4]
+    "155. Me enojo con facilidad, pero se me pasa pronto.",[cite: 4]
+    "156. Recuerdo haberme fingido enfermo(a) para evitar algo.",[cite: 4]
+    "157. Cualquier persona que sea capaz y esté dispuesta a trabajar duro tiene buenas posibilidades de éxito.",[cite: 4]
+    "158. A menudo la vida me resulta difícil.",[cite: 4]
+    "159. He tenido momentos en los que mi mente se ha quedado en blanco y no me daba cuenta de lo que ocurría a mi alrededor.",[cite: 4]
+    "160. A veces creo que puedo tomar decisiones con extraordinaria facilidad.",[cite: 4]
+    "161. A menudo me vienen a la mente malas palabras, palabras horribles y me es imposible quitármelas de la cabeza.",[cite: 4]
+    "162. Nunca o casi nunca tengo mareos.",[cite: 4]
+    "163. Despierto descansado (a) y fresco (a) casi todas las mañanas.",[cite: 4]
+    "164. Últimamente he pensado mucho en matarme.",[cite: 4]
+    "165. Con frecuencia le tengo miedo a la obscuridad.",[cite: 4]
+    "166. Algunas veces sin razón, aun cuando me vaya mal, me siento muy alegre, como si estuviera en \"la cima del mundo\".",[cite: 4]
+    "167. Me pone nervioso(a) tener que esperar.",[cite: 4]
+    "168. Hay personas que quieren apoderarse de mis pensamientos e ideas.",[cite: 4]
+    "169. El futuro me parece sin esperanzas.",[cite: 4]
+    "170. Puedo dormir durante el día pero no durante la noche.",[cite: 4]
+    "171. Creo que casi todo el mundo mentiría para evitarse problemas.",[cite: 4]
+    "172. Con frecuencia, aun cuando todo vaya bien, siento que nada me importa.",[cite: 4]
+    "173. Cuando era niño(a) me golpearon muchas veces.",[cite: 4]
+    "174. Durante los últimos años he gozado de buena salud la mayor parte del tiempo.",[cite: 4]
+    "175. Nunca me siento más contento(a) que cuando estoy solo(a).",[cite: 4]
+    "176. A menudo siento como si tuviera una cinta que me apretara la cabeza.",[cite: 4]
+    "177. Por lo general no le hablo a la gente, hasta que ellos me hablan.",[cite: 4]
+    "178. Sería mejor que se desecharan casi todas las leyes.",[cite: 4]
+    "179. Algunas veces pierdo o me cambia la voz, aunque no esté resfriado(a).",[cite: 4]
+    "180. Algunos de mis familiares han hecho ciertas cosas que me han asustado.",[cite: 4]
+    "181. Una vez a la semana o más frecuentemente me pongo muy agitado(a).",[cite: 4]
+    "182. Tengo entera confianza en mí mismo.",[cite: 4]
+    "183. Prefiero ganar que perder en un juego.",[cite: 4]
+    "184. No le temo al agua.",[cite: 4]
+    "185. A la mayor parte de la gente le disgusta ayudar a los demás, aunque no lo diga.",[cite: 4]
+    "186. Nunca he tenido un ataque ni convulsiones.",[cite: 4]
+    "187. Algunas veces he sentido que las dificultades se acumulan de tal modo que no puedo vencerlas.",[cite: 4]
+    "188. Si fuera reportero(a) me gustaría mucho escribir notas deportivas.",[cite: 4]
+    "189. Muy pocas veces me duele la cabeza.",[cite: 4]
+    "190. Nunca he tenido problemas con la ley.",[cite: 4]
+    "191. Cuando camino tengo mucho cuidado de no pisar las rayas en las banquetas.",[cite: 4]
+    "192. Después de un mal día, generalmente necesito algunos tragos para relajarme.",[cite: 4]
+    "193. A veces me divierte tanto la astucia de algún criminal, que he deseado que se salga con la suya.",[cite: 4]
+    "194. Estoy seguro(a) de que la gente habla de mí.",[cite: 4]
+    "195. Cuando me siento triste, casi siempre algo emocionante me saca de ese estado.",[cite: 4]
+    "196. Me gusta el arte dramático.",[cite: 4]
+    "197. Generalmente le hablo claro a la gente a quien estoy tratando de mejorar o corregir.",[cite: 4]
+    "198. Me atemorizo ante las crisis o dificultades.",[cite: 4]
+    "199. A veces percibo olores raros.",[cite: 4]
+    "200. Es más difícil para mí concentrarme de lo que parece ser para otras personas.",[cite: 4]
+    "201. Me gustan las fiestas y las reuniones sociales.",[cite: 4]
+    "202. Nunca en mi vida me he sentido mejor que ahora.",[cite: 4]
+    "203. A veces mi alma abandona mi cuerpo.",[cite: 4]
+    "204. Aun cuando estoy acompañado(a) me siento solo(a) la mayor parte del tiempo.",[cite: 4]
+    "205. Cuando era chico(a) frecuentemente no iba a la escuela aunque debía haberlo hecho.",[cite: 4]
+    "206. Quisiera dejar de preocuparme por las cosas que he dicho y que quizás hayan herido los sentimientos de otras personas.",[cite: 4]
+    "207. Tengo periodos en que me siento muy alegre sin que exista una razón especial.",[cite: 4]
+    "208. Tengo miedo de usar cuchillos o cualquier otra cosa filosa o puntiaguda.",[cite: 4]
+    "209. Sin duda he tenido más cosas de qué preocuparme de las que me corresponderían.",[cite: 4]
+    "210. Sufro de malestares en la boca del estómago, varios días a la semana o más frecuentemente.",[cite: 4]
+    "211. No me agradan todas las personas que conozco.",[cite: 4]
+    "212. No tengo enemigos que realmente quieran hacerme daño.",[cite: 4]
+    "213. Las personas generalmente exigen más respeto para seus propios derechos, que el que están dispuestas a conceder a los demás.",[cite: 4]
+    "214. Aunque no estoy satisfecho(a) con mi vida, nada puedo hacer ahora para cambiarla.",[cite: 4]
+    "215. Con frecuencia tengo serios desacuerdos con personas importantes para mí.",[cite: 4]
+    "216. A veces me molesta oir tan bien.",[cite: 4]
+    "217. Muy rara vez me siento deprimido(a).",[cite: 4]
+    "218. A veces me ha sido imposible evitar robar o llevarme algo de una tienda.",[cite: 4]
+    "219. Algunas veces me siento tan-inquieto(a) que me es difícil quedarme dormido(a).",[cite: 4]
+    "220. No le temo a las arañas.",[cite: 4]
+    "221. Creo en el cumplimiento de la ley.",[cite: 4]
+    "222. Creo que hago amistades tan fácilmente como cualquiera.",[cite: 4]
+    "223. Cuando joven me suspendieron de la escuela una o más veces por mala conducta.",[cite: 4]
+    "224. Siempre tengo muy poco tiempo para terminar lo que hago.",[cite: 4]
+    "225. Me han dicho que camino cuando estoy dormido(a).",[cite: 4]
+    "226. Me gustaría ser corredor(a) de autos.",[cite: 4]
+    "227. No he tenido dificultad en mantener el equilibrio cuando camino.",[cite: 4]
+    "228. Casi todo el tiempo me siento preocupado(a) por algo o por alguien.",[cite: 4]
+    "229. Tiendo a dejar de hacer algo que quiero, si otros creen que eso no vale la pena.",[cite: 4]
+    "230. Tengo muchos problemas estomacales.",[cite: 4]
+    "231. Puedo atemorizar fácilmente a la gente y a veces lo hago para divertirme.",[cite: 4]
+    "232. A veces pienso que no sirvo para nada.",[cite: 4]
+    "233. La gente dice cosas ofensivas y vulgares acerca de mí.",[cite: 4]
+    "234. Actualmente no me siento estresado(a).",[cite: 4]
+    "235. Me molesta que la gente me mire en la calle, en las tiendas, etc.",[cite: 4]
+    "236. No me gusta escuchar a otras personas dar sus opiniones sobre la vida.",[cite: 4]
+    "237. Excepto por orden del médico, nunca he tomado drogas o pastillas para dormir.",[cite: 4]
+    "238. Cuando un hombre está con una mujer, casi siempre está pensando en cosas relacionadas con el sexo.",[cite: 4]
+    "239. Si me dieran la oportunidad sería un buen líder.",[cite: 4]
+    "240. Muchas veces siento como si las cosas no fueran reales.",[cite: 4]
+    "241. En ocasiones me gusta el chisme.",[cite: 4]
+    "242. A veces la parte superior de mi cabeza está muy sensible.",[cite: 4]
+    "243. La suciedad me molesta o me horroriza.",[cite: 4]
+    "244. Si me dieran la oportunidad, podría hacer algunas cosas que serían de gran beneficio para la humanidad.",[cite: 4]
+    "245. Si fuera periodista me gustaría mucho escribir sobre teatro.",[cite: 4]
+    "246. Por lo general espero tener éxito en lo que hago.",[cite: 4]
+    "247. Gran parte del tiempo me siento cansado(a).",[cite: 4]
+    "248. Me han dicho con frecuencia que tengo mal genio.",[cite: 4]
+    "249. En la escuela me era muy difícil hablar frente a la clase.",[cite: 4]
+    "250. Frecuentemente me siento apenado(a) por ser tan irritable y gruñón(a).",[cite: 4]
+    "251. Nadie lo sabe, pero he tratado de matarme.",[cite: 4]
+    "252. Alguien controla mi mente.",[cite: 4]
+    "253. En la escuela mis calificaciones en conducta generalmente eran malas.",[cite: 4]
+    "254. Raras veces noto los latidos de mi corazón, y muy pocas veces me falta la respiración.",[cite: 4]
+    "255. No me molesta mucho ver sufrir a los animales.",[cite: 4]
+    "256. Con frecuencia he conocido a personas supuestamente expertas y que no resultaron mejores que yo.",[cite: 4]
+    "257. Tengo pensamientos extraños y poco comunes.",[cite: 4]
+    "258. Me produce terror la idea de un terremoto.",[cite: 4]
+    "259. Me gusta reparar las cerraduras de las puertas.",[cite: 4]
+    "260. Frecuentemente he trabajado para personas que se atribuyen el reconocimiento por un buen trabajo pero culpan a los subalternos de los errores.",[cite: 4]
+    "261. Algunas veces me siento al borde de una crisis nerviosa.",[cite: 4]
+    "262. Estoy tan sano como la mayoría de mis amigos.",[cite: 4]
+    "263. Tengo que admitir que a veces me he preocupado más de la cuenta por cosas que no valían la pena.",[cite: 4]
+    "264. Alguien me tiene mala voluntad.",[cite: 4]
+    "265. Padezco poca o ninguna clase de dolores.",[cite: 4]
+    "266. Tengo problemas con el alcohol o las drogas.",[cite: 4]
+    "267. He tenido épocas en las que me sentía tan lleno de energía que en ocasiones, hasta por varios días, no necesitaba dormir.",[cite: 4]
+    "268. Nunca me preocupa mi apariencia física.",[cite: 4]
+    "269. Cuando las cosas van muy mal, sé que puedo contar con la ayuda de mi familia.",[cite: 4]
+    "270. Una o más veces en mi vida he sentido que alguien me obligaba a hacer cosas hipnotizándome.",[cite: 4]
+    "271. Me molesta que la gente me apresure.",[cite: 4]
+    "272. No tengo dificultades al tragar.",[cite: 4]
+    "273. Oigo cosas extrañas cuando estoy solo(a).",[cite: 4]
+    "274. En general tengo problemas para decidir qué debo hacer.",[cite: 4]
+    "275. Varias veces por semana siento como si algo terrible fuera a suceder.",[cite: 4]
+    "276. Cuando alguien hace algo que me enoja, le digo a la persona cómo me siento.",[cite: 4]
+    "277. Con frecuencia noto que mis manos tiemblan cuando trato de hacer algo.",[cite: 4]
+    "278. Siempre que me es posible evito estar entre mucha gente.",[cite: 4]
+    "279. La mayoría de los hombres son infieles a sus esposas de vez en cuando.",[cite: 4]
+    "280. Con frecuencia me confundo y se me olvida lo que quiero decir.",[cite: 4]
+    "281. Mi familia me trata más como un niño(a) que como un adulto.",[cite: 4]
+    "282. Los objetivos más importantes de mi vida están a mi alcance.",[cite: 4]
+    "283. Hablar con alguien sobre los problemas y preocupaciones es mucho mejor que tomar drogas o medicinas.",[cite: 4]
+    "284. Tengo miedo de estar solo(a) en un sitio al descubierto.",[cite: 4]
+    "285. A veces me parece que no puedo dejar de hablar.",[cite: 4]
+    "286. No le tengo miedo a los ratones.",[cite: 4]
+    "287. Alguien ha tratado de influir en mi mente.",[cite: 4]
+    "288. Con frecuencia siento que no soy tan bueno(a) como otras personas.",[cite: 4]
+    "289. Con frecuencia he tenido miedo durante la noche.",[cite: 4]
+    "290. Casi nunca noto que me zumben o silben los oídos.",[cite: 4]
+    "291. Nunca me siento más feliz que cuando estoy solo(a).",[cite: 4]
+    "292. Me gusta tener a los demás intrigados con respecto a lo que haré.",[cite: 4]
+    "293. Por lo general soy tranquilo(a) y no me altero fácilmente.",[cite: 4]
+    "294. A mi alrededor veo cosas, animales o personas que otros no ven.",[cite: 4]
+    "295. No temo entrar solo(a) a un salón donde hay gente reunida platicando.",[cite: 4]
+    "296. Me gustaría ser periodista.",[cite: 4]
+    "297. Me drogo o me emborracho por lo menos una vez a la semana.",[cite: 4]
+    "298. En las elecciones, algunas veces voto por candidatos que casi no conozco.",[cite: 4]
+    "299. Me siento incapaz cuando tengo que tomar una decisión importante.",[cite: 4]
+    "300. Me gusta mucho jugar deportes rudos (como fútbol americano o fútbol soccer).",[cite: 4]
+    "301. Se me adormecen una o varias partes de la piel.",[cite: 4]
+    "302. Me gusta tomar decisiones y asignar trabajo a otros.",[cite: 4]
+    "303. Con frecuencia me irrita mucho que me interrumpan cuando estoy trabajando.",[cite: 4]
+    "304. En la mayoría de los matrimonios uno o los dos miembros de la pareja son infelices.",[cite: 4]
+    "305. Me gustaría mucho ganarles a los criminales en sus fechorías.",[cite: 4]
+    "306. Olvido dónde dejo las cosas.",[cite: 4]
+    "307. Algunas veces he tenido pensamientos terribles acerca de mi familia.",[cite: 4]
+    "308. Con frecuencia me salen manchas rojas en el cuello.",[cite: 4]
+    "309. Me preocupa bastante el dinero.",[cite: 4]
+    "310. La gente no es muy amable conmigo.",[cite: 4]
+    "311. Algunas veces estoy seguro(a) que los demás pueden saber lo que estoy pensando.",[cite: 4]
+    "312. Cuando he estado tomado(a) me he enojado y he roto muebles y platos.",[cite: 4]
+    "313. Nunca he sufrido parálisis o alguna debilidad fuera de lo común en alguno de mis músculos.",[cite: 4]
+    "314. Odio a toda mi familia.",[cite: 4]
+    "315. Estoy tan harto(a) de lo que hago diariamente, que lo único que deseo es deshacerme de todo.",[cite: 4]
+    "316. A veces he tenido que ser rudo(a) con personas groseras o inoportunas.",[cite: 4]
+    "317. No puedo entrar solo(a) en un cuarto oscuro, aun en mi propia casa.",[cite: 4]
+    "318. En ocasiones me molesto y enojo tanto, que no sé que me pasa.",[cite: 4]
+    "319. A veces me es difícil defender mis derechos porque soy muy reservado(a).",[cite: 4]
+    "320. Ciertos animales me ponen nervioso(a).",[cite: 4]
+    "321. Me gusta negociar en situaciones difíciles.",[cite: 4]
+    "322. La crítica o el regaño me hieren profundamente.",[cite: 4]
+    "323. Cuando estoy triste, me ayuda a sentirme mejor visitar a los amigos.",[cite: 4]
+    "324. Me pongo nervioso(a) cuando tengo que tomar decisiones importantes.",[cite: 4]
+    "325. A veces me río de los chistes obscenos.",[cite: 4]
+    "326. La mayoría de las parejas casadas no se demuestran mucho afecto.",[cite: 4]
+    "327. Con frecuencia me esfuerzo para superar a alguien que me ha llevado la contraria.",[cite: 4]
+    "328. Si me enojo, sé con seguridad que me dará dolor de cabeza.",[cite: 4]
+    "329. Me he llegado a sentir tan enojado(a) que he lastimado a otra persona en un pleito a puñetazos.",[cite: 4]
+    "330. En ocasiones me parece escuchar lo que pienso en voz alta.",[cite: 4]
+    "331. Cuando la vida se pone difícil, quisiera tan sólo rendirme.",[cite: 4]
+    "332. Si la gente no hubiera querido perjudicarme, hubiera tenido más éxito en la vida.",[cite: 4]
+    "333. No me canso con facilidad.",[cite: 4]
+    "334. Últimamente, mis pensamientos están más y más relacionados con la muerte y con la vida después de la muerte.",[cite: 4]
+    "335. Me enojo conmigo mismo(a) cuando accedo demasiado a los deseos de los demás.",[cite: 4]
+    "336. Reconozco que tengo varios defectos que no seré capaz de cambiar.",[cite: 4]
+    "337. Me he enojado tanto con alguien, que he sentido como si fuera a explotar.",[cite: 4]
+    "338. Frecuentemente me encuentro preocupado(a) por algo.",[cite: 4]
 ]
 OPCIONES_MMPI = ["Verdadero", "Falso"]
 
@@ -431,7 +655,7 @@ ITEMS_BDI = [
     {"titulo": "16. Cambios en el patrón de sueño", "opciones": ["0 - No he experimentado ningún cambio en mi patrón de sueño.", "1 - Duermo algo más o algo menos que de costumbre.", "2 - Duermo mucho más o mucho menos que de costumbre.", "3 - Duermo la mayor parte del tiempo o me despierto 1-2 horas antes y no puedo volver a dormirme."]},
     {"titulo": "17. Irritabilidad", "opciones": ["0 - No estoy más irritable de lo habitual.", "1 - Estoy más irritable de lo habitual.", "2 - Estoy mucho más irritable de lo habitual.", "3 - Estoy irritable todo el tiempo."]},
     {"titulo": "18. Cambios en el apetito", "opciones": ["0 - No he experimentado ningún cambio en mi apetito.", "1 - Mi apetito es algo menor o mayor que de costumbre.", "2 - Mi apetito es mucho menor o mayor que de costumbre.", "3 - No tengo apetito en absoluto o tengo ansias de comer todo el tiempo."]},
-    {"titulo": "19. Dificultad de concentración", "opciones": ["0 - Puedo concentrarme tan bien como siempre.", "1 - No puedo concentrarme tan bien como habitualmente.", "2 - Me cuesta mantener la concentración en cualquier cosa por mucho tiempo.", "3 - Encuentro que no puedo concentrarme en nada."]},
+    {"titulo": "19. Dificultad de concentración", "opciones": ["0 - Puedo concentrarme tan bien como siempre.", "1 - No puedo concentrarme tan bien como habitualmente.", "2 - Me cuesta mantener la concentración en cualquier cosa por mucho tiempo.", "3 - Encuentro que no puedo concentrarse en nada."]},
     {"titulo": "20. Cansancio o fatiga", "opciones": ["0 - No estoy más cansado/a o fatigado/a que de costumbre.", "1 - Me canso o fatigo más fácilmente que de costumbre.", "2 - Estoy demasiado cansado/a o fatigado/a para hacer muchas de las cosas que solía hacer.", "3 - Estoy demasiado cansado/a o fatigado/a para hacer la mayoría de las cosas que solía hacer."]},
     {"titulo": "21. Pérdida de interés en el sexo", "opciones": ["0 - No he notado ningún cambio reciente en mi interés por el sexo.", "1 - Estoy menos interesado/a en el sexo de lo que solía estar.", "2 - Estoy mucho menos interesado/a en el sexo ahora.", "3 - He perdido el interés en el sexo por completo."]}
 ]
@@ -782,12 +1006,7 @@ ITEMS_PAI = [
     "343. Pongo mucho cuidado en la forma de gastar el dinero.",
     "344. Casi nunca estoy de mal humor."
 ]
-OPCIONES_PAI = {
-    "F": "F - Falso",
-    "LV": "LV - Ligeramente verdadero",
-    "BV": "BV - Bastante verdadero",
-    "CV": "CV - Completamente verdadero"
-}
+OPCIONES_MMPI = ["Verdadero", "Falso"]
 
 MAPA_TESTS = {
     "LSB-50": {"items": ITEMS_LSB50, "opciones": OPCIONES_LSB50},
