@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# OCULTAR MENÚ, FOOTER, CABECERA Y BOTÓN "MANAGE APP" DE STREAMLIT
+# OCULTAR MENÚ, FOOTER, CABECERA Y BARRA FLOTANTE "MANAGE APP"
 # -----------------------------------------------------------------------------
 hide_streamlit_style = """
     <style>
@@ -23,8 +23,12 @@ hide_streamlit_style = """
     footer {visibility: hidden;}
     header {visibility: hidden;}
     [data-testid="stDecoration"] {display: none;}
+    
+    /* Ocultar botón flotante Manage App y barra de herramientas de Streamlit Cloud */
+    [data-testid="stAppDeployButton"] {display: none !important;}
+    div[data-testid="stToolbar"] {display: none !important;}
+    div.stAppToolbar {display: none !important;}
     .viewerBadge_container__1QSob {display: none !important;}
-    div[class*="viewerBadge"] {display: none !important;}
     #manage-app-button {display: none !important;}
     </style>
 """
