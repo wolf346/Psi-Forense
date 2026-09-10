@@ -347,7 +347,7 @@ ITEMS_MMPI2RF = [
         " calientes."
     ),
     (
-        "29. Tiendo a tomar los desengaños taan a pecho que no puedo dejar de"
+        "29. Tiendo a tomar los desengaños tan a pecho que no puedo dejar de"
         " pensar en ellos."
     ),
     "30. La mayor parte del tiempo me siento triste.",
@@ -807,13 +807,13 @@ ITEMS_MMPI2RF = [
     "323. Cuando estoy triste, me ayuda a sentirme mejor visitar a los amigos.",
     "324. Me pongo nervioso(a) cuando tengo que tomar decisiones importantes.",
     "325. A veces me río de los chistes obscenos.",
-    "326. La mayoría des las parejas casadas no se demuestran mucho afecto.",
+    "326. La mayoría de las parejas casadas no se demuestran mucho afecto.",
     "327. Con frecuencia me esfuerzo para superar a alguien que me ha llevado la contraria.",
     "328. Si me enojo, sé con seguridad que me dará dolor de cabeza.",
     "329. Me he llegado a sentir tan enojado(a) que he lastimado a otra persona en un pleito a puñetazos.",
     "330. En ocasiones me parece escuchar lo que pienso en voz alta.",
     "331. Cuando la vida se pone difícil, quisiera tan sólo rendirme.",
-    "332. Si la gente no hubiera tenido que perjudicarme, hubiera tenido más éxito en la vida.",
+    "332. Si la gente no hubiera querido perjudicarme, hubiera tenido más éxito en la vida.",
     "333. No me canso con facilidad.",
     "334. Últimamente, mis pensamientos están más y más relacionados con la muerte y con la vida después de la muerte.",
     "335. Me enojo conmigo mismo(a) cuando accedo demasiado a los deseos de los demás.",
@@ -1064,7 +1064,7 @@ ITEMS_CUIDA = [
     "166. Acepto las reglas de convivencia con agrado.",
     "167. Me siento capaz de sostener emocionalmente a otro.",
     "168. Muestro paciencia ante las rabieta o berrinches infantiles.",
-    "169. Respeto la intimidad y el espacio ajeno.",
+    "169. Respeto el intimidad y el espacio ajeno.",
     "170. Mantengo una actitud de colaboración constante.",
     (
         "171. Sé adaptarme a las exigencias del entorno sin perder mi"
@@ -1565,7 +1565,7 @@ ITEMS_PAI = [
         " muchos nervios."
     ),
     "107. Me siento sin fuerzas para continuar.",
-    "108. Tengo plans que me convertirán algún día en una persona famosa.",
+    "108. Tengo planes que me convertirán algún día en una persona famosa.",
     "109. Las personas que me rodean son leales conmigo.",
     "110. Soy una persona solitaria.",
     "111. Haría cualquier cosa si me pagasen lo suficiente.",
@@ -1726,7 +1726,7 @@ ITEMS_PAI = [
     "209. A veces no puedo recordar quién soy.",
     "210. Otras personas pueden leer mis pensamientos.",
     (
-        "211. Nunca me expulsaron de la escuela durante mi niñez, ni siquiera"
+        "211. Nunca me expulsaron de la escuela durante my niñez, ni siquiera"
         " temporalmente."
     ),
     "212. He tenido algunas enfermedades o molestias bastante raras.",
@@ -2169,8 +2169,19 @@ if st.session_state["perito_autenticado"]:
                   respuesta_texto = str(resp_val)
                   if key_test and MAPA_TESTS[key_test]["opciones"]:
                     map_ops = MAPA_TESTS[key_test]["opciones"]
-                    if resp_val in map_ops:
-                      respuesta_texto = map_ops[resp_val]
+                    
+                    val_evaluado = resp_val
+                    sigue_texto = ""
+                    if isinstance(resp_val, dict) and "valor" in resp_val:
+                      val_evaluado = resp_val["valor"]
+                      if resp_val.get("sigue_afectando", False):
+                        sigue_texto = " [Sigue afectando]"
+
+                    if val_evaluado in map_ops:
+                      respuesta_texto = map_ops[val_evaluado] + sigue_texto
+                    else:
+                      respuesta_texto = str(resp_val)
+
                   tabla_datos.append({
                       "Consigna / Ítem": consigna_texto,
                       "Respuesta": respuesta_texto,
@@ -2622,7 +2633,7 @@ else:
           elif test_seleccionado == "BDI-II (Inventario de Depresión de Beck)":
             st.subheader("BDI-II - Inventario de Depresión de Beck")
             st.info(
-                "Seleccione la frase que mejor describa cómo se ha sentido"
+                "Seleccione la frase que mejor describa cómo se ha sentito"
                 " durante las últimas dos semanas."
             )
             respuestas_bdi = {}
