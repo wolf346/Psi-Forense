@@ -15,21 +15,13 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# OCULTAR MENÚ, FOOTER, CABECERA Y BARRA FLOTANTE "MANAGE APP"
+# OCULTAR MENÚ, FOOTER Y CABECERA DE STREAMLIT (GITHUB / SHARE)
 # -----------------------------------------------------------------------------
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    [data-testid="stDecoration"] {display: none;}
-    
-    /* Ocultar botón flotante Manage App y barra de herramientas de Streamlit Cloud */
-    [data-testid="stAppDeployButton"] {display: none !important;}
-    div[data-testid="stToolbar"] {display: none !important;}
-    div.stAppToolbar {display: none !important;}
-    .viewerBadge_container__1QSob {display: none !important;}
-    #manage-app-button {display: none !important;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -827,7 +819,7 @@ ITEMS_MMPI2RF = [
     "335. Me enojo conmigo mismo(a) cuando accedo demasiado a los deseos de los demás.",
     "336. Reconozco que tengo varios defectos que no seré capaz de cambiar.",
     "337. Me he enojado tanto con alguien, que he sentido como si fuera a explotar.",
-    "338. Frecuentemente me encuentro preocupado(a) por algo.",
+    "338. Frecuentemente me encuentro preocupado(a) por algo."
 ]
 OPCIONES_MMPI = ["Verdadero", "Falso"]
 
@@ -2130,6 +2122,7 @@ if st.session_state["perito_autenticado"]:
                 " hs"
             )
             
+            # --- MEJORA INTEGRADA DE CONSENTIMIENTO Y DATOS COMPLETADOS ---
             consent_status = (
                 f"✅ Aceptado formalmente el {persona.get('fecha_consentimiento', 'N/A')}"
                 if persona.get("consentimiento_aceptado")
