@@ -1552,7 +1552,7 @@ ITEMS_PAI = [
     ),
     "99. Algunas personas muy próximas me han abandonado.",
     "100. He hecho planes para matarme.",
-    "101. Cuando me enfurezco es muy difícil calmarme.",
+    "101. Cuando me enfudrezco es muy difícil calmarme.",
     "102. He tenido problemas económicos por el consumo de drogas.",
     "103. Soy incapaz de controlar mi consumo de drogas.",
     "104. A veces me quejo demasiado.",
@@ -2127,6 +2127,30 @@ if st.session_state["perito_autenticado"]:
                 else "❌ No Aceptado"
             )
             st.write(f"**Consentimiento Informado:** {consent_status}")
+
+            # -----------------------------------------------------------------
+            # DOCUMENTO DE CONSENTIMIENTO INFORMADO EN DESPLEGABLE
+            # -----------------------------------------------------------------
+            with st.expander("📄 Ver Documento de Consentimiento Informado Registrado"):
+              st.markdown(
+                  f"""
+                  ### 📜 ACTA DE CONSENTIMIENTO INFORMADO PERICIAL
+                  
+                  **Estado del Registro:** {consent_status}  
+                  **Nombre y Apellido:** {persona.get('nombre', 'N/A')}  
+                  **DNI / Documento:** {persona.get('dni', 'N/A')}  
+                  **Localidad:** {persona.get('localidad', 'N/A')}  
+                  **Fecha y Hora:** {persona.get('fecha_consentimiento', persona.get('fecha', 'N/A'))}  
+                  **Dirección IP de Registro:** `{info.get('ip_acceso', 'N/A')}`  
+                  **Dispositivo (User-Agent):** `{info.get('user_agent', 'N/A')}`  
+                  **Firma Digital (Hash de Identidad):** `{persona.get('hash_identidad', 'N/A')}`  
+                  
+                  ---
+                  **DECLARACIÓN Y TÉRMINOS ACEPTADOS POR EL EVALUADO:**
+                  > *"Por la presente manifiesto expresamente haber sido informado/a del carácter y finalidad de la evaluación psicológica pericial a la que me someto voluntariamente, aceptando responder con veracidad a las pruebas administradas y autorizando el tratamiento seguro y confidencial de mis respuestas bajo los protocolos de cadena de custodia y trazabilidad forense correspondientes."*
+                  """
+              )
+
             st.write(
                 "**Hash de Identidad:**"
                 f" `{persona.get('hash_identidad', 'N/A')}`"
@@ -2264,398 +2288,48 @@ else:
       # PASO 1: DATOS DEL EVALUADO Y REGISTRO DE IDENTIDAD
       # -----------------------------------------------------------------------
       if datos_token.get("datos_persona") is None:
-        st.subheader("📋 Datos del Evaluado y Registro de Identidad")
-        st.write(
-            "Por favor, complete sus datos filiatorios antes de acceder al"
-            " consentimiento e instrumentos de evaluación:"
-        )
+        st.subheader("📋 Registro de Datos Filiatorios y Consentimiento Informado")
+        with st.form("form_datos_evaluado"):
+          nombre = st.text_input("Nombre y Apellido completo:")
+          dni = st.text_input("Número de DNI / Documento:")
+          localidad = st.text_input("Localidad / Ciudad:")
+          nacionalidad = st.text_input("Nacionalidad:", value="Argentina")
 
-        with st.form("form_datos_personales"):
-          nombre_comp = st.text_input(
-              "Nombre y Apellido completo:", autocomplete="off"
+          st.markdown("---")
+          st.markdown("### 📜 Consentimiento Informado")
+          st.info(
+              "Por la presente manifiesto expresamente haber sido informado/a del carácter y finalidad "
+              "de la evaluación psicológica pericial a la que me someto voluntariamente, aceptando responder "
+              "con veracidad a las pruebas administradas y autorizando el tratamiento seguro y confidencial "
+              "de mis respuestas bajo los protocolos de cadena de custodia y trazabilidad forense correspondientes."
           )
-          dni_val = st.text_input(
-              "Número de DNI / Documento:", autocomplete="off"
-          )
-          localidad_val = st.text_input(
-              "Localidad de residencia:", autocomplete="off"
-          )
-          nacionalidad_val = st.text_input(
-              "Nacionalidad:", value="Argentina", autocomplete="off"
-          )
+          acepta_consentimiento = st.checkbox("Acepto expresamente los términos del Consentimiento Informado")
 
-          guardar_datos = st.form_submit_button("Continuar al Consentimiento Informado", use_container_width=True)
+          submit_datos = st.form_submit_button("Guardar y Continuar")
 
-          if guardar_datos:
-            if (
-                nombre_comp.strip() != ""
-                and dni_val.strip() != ""
-                and localidad_val.strip() != ""
-            ):
-              try:
-                tz_ba = ZoneInfo("America/Argentina/Buenos_Aires")
-                ahora_ba = datetime.now(tz_ba)
-              except Exception:
-                tz_ba = timezone(timedelta(hours=-3))
-                ahora_ba = datetime.now(tz_ba)
-
-              fecha_eval = ahora_ba.strftime("%Y-%m-%d")
-              hora_eval = ahora_ba.strftime("%H:%M:%S")
-
-              str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{localidad_val.strip()}-{fecha_eval}-{hora_eval}-{ip_cliente}"
-              hash_generado = hashlib.sha256(
-                  str_para_hash.encode("utf-8")
-              ).hexdigest()
-
-              datos_token["datos_persona"] = {
-                  "nombre": nombre_comp.strip(),
-                  "dni": dni_val.strip(),
-                  "localidad": localidad_val.strip(),
-                  "nacionalidad": nacionalidad_val.strip(),
-                  "fecha": fecha_eval,
-                  "hora": hora_eval,
-                  "hash_identidad": hash_generado,
-                  "consentimiento_aceptado": False,
-                  "fecha_consentimiento": None,
-              }
-              datos_token["ip_acceso"] = ip_cliente
-              datos_token["user_agent"] = ua_cliente
-
-              guardar_token_db(token_actual, datos_token)
-              st.rerun()
+          if submit_datos:
+            if not nombre or not dni or not acepta_consentimiento:
+              st.error("Por favor complete todos los campos obligatorios y acepte el consentimiento.")
             else:
-              st.warning(
-                  "Por favor complete Nombre, DNI y Localidad para poder"
-                  " avanzar."
-              )
+              now = datetime.now(ZoneInfo("America/Argentina/Buenos_Aires"))
+              fecha_str = now.strftime("%Y-%m-%d")
+              hora_str = now.strftime("%H:%M:%S")
 
-      # -----------------------------------------------------------------------
-      # PASO 2: CONSENTIMIENTO INFORMADO
-      # -----------------------------------------------------------------------
-      elif not datos_token.get("datos_persona", {}).get(
-          "consentimiento_aceptado", False
-      ):
-        persona = datos_token["datos_persona"]
-        fecha_eval = persona.get("fecha", "")
-        hora_eval = persona.get("hora", "")
-        localidad_eval = persona.get("localidad", "N/A")
+              hash_id = hashlib.sha256(f"{nombre}-{dni}-{fecha_str}".encode()).hexdigest()
 
-        st.subheader("📜 Consentimiento Informado Tele Evaluación Psicológica")
-        st.info(
-            f"Evaluado/a: **{persona['nombre']}** | DNI:"
-            f" **{persona['dni']}** | Localidad:"
-            f" **{localidad_eval}** | Nacionalidad:"
-            f" **{persona.get('nacionalidad', 'N/A')}**"
-        )
+              datos_persona = {
+                  "nombre": nombre,
+                  "dni": dni,
+                  "localidad": localidad,
+                  "nacionalidad": nacionalidad,
+                  "fecha": fecha_str,
+                  "hora": hora_str,
+                  "consentimiento_aceptado": acepta_consentimiento,
+                  "fecha_consentimiento": f"{fecha_str} {hora_str}",
+                  "hash_identidad": hash_id,
+              }
 
-        st.markdown(f"""
-        **CONSENTIMIENTO INFORMADO TELE EVALUACIÓN PSICOLÓGICA**
-        
-        **Lugar y Fecha:** {localidad_eval}, {fecha_eval} ({hora_eval} hs)
-        
-        Yo, **{persona['nombre']}**, identificado/a con DNI **{persona['dni']}**, de nacionalidad **{persona.get('nacionalidad', 'N/A')}**:
-        
-        Declaro que conozco los objetivos y las fases del Proceso de Peritación Psicológica llevado a cabo con el propósito de elevar un Informe Psicológico para ser presentado en la instancia correspondiente.
-        
-        Estoy dispuesto/a a iniciar dicho proceso, siendo consciente que su contenido versa sobre diversos aspectos de mi historia vital. He sido informado/a que los encuentros se realizarán por la plataforma digital designada y que debo mantener el micrófono y la cámara constantemente encendidas; por tanto, firmo/acepto de manera voluntaria, bajo ningún tipo de imposición este documento.
-        """)
-
-        st.divider()
-        acepta_check = st.checkbox(
-            "Declaro haber leído, comprendido y aceptado el Consentimiento"
-            " Informado para la Evaluación Psicológica."
-        )
-
-        if st.button(
-            "Confirmar Consentimiento y Acceder a los Test",
-            type="primary",
-            use_container_width=True,
-        ):
-          if acepta_check:
-            try:
-              tz_ba = ZoneInfo("America/Argentina/Buenos_Aires")
-              ahora_ba = datetime.now(tz_ba)
-            except Exception:
-              tz_ba = timezone(timedelta(hours=-3))
-              ahora_ba = datetime.now(tz_ba)
-
-            datos_token["datos_persona"]["consentimiento_aceptado"] = True
-            datos_token["datos_persona"]["fecha_consentimiento"] = (
-                ahora_ba.strftime("%Y-%m-%d %H:%M:%S")
-            )
-            guardar_token_db(token_actual, datos_token)
-            st.rerun()
-          else:
-            st.error(
-                "Debe tildar la casilla de verificación para prestar conformidad"
-                " antes de realizar las pruebas."
-            )
-
-      # -----------------------------------------------------------------------
-      # PASO 3: APLICACIÓN DE INSTRUMENTOS Y TEST
-      # -----------------------------------------------------------------------
-      else:
-        persona = datos_token["datos_persona"]
-        hora_str = persona.get("hora", "N/A")
-        evaluaciones_realizadas = datos_token.get("evaluaciones", {})
-
-        st.info(
-            f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** |"
-            f" Localidad: **{persona.get('localidad', 'N/A')}** |"
-            " Consentimiento: **✅ Aceptado** | Hash:"
-            f" `{persona['hash_identidad'][:10]}...`"
-        )
-
-        if st.session_state.get("test_enviado"):
-          st.success(
-              "¡Escala enviada y registrada bajo cadena de custodia digital"
-              " inalterable!"
-          )
-          st.write(
-              "Sus respuestas han sido almacenadas de manera segura para el"
-              " perito."
-          )
-          st.divider()
-          if st.button(
-              "🏠 Completar otra escala / Volver al menú",
-              type="primary",
-              use_container_width=True,
-          ):
-            st.session_state["test_enviado"] = False
-            st.rerun()
-        else:
-          if evaluaciones_realizadas:
-            st.write(
-                "✅ **Escalas completadas hasta el momento:** "
-                + ", ".join(list(evaluaciones_realizadas.keys()))
-            )
-
-          test_seleccionado = st.selectbox(
-              "Seleccione la escala a completar:",
-              [
-                  "-- Seleccione una opción --",
-                  "Listado de Síntomas Breve (LSB-50)",
-                  "Escala de Sucesos de Vida (Casullo)",
-                  "MMPI-2-RF (Inventario Multifásico de Personalidad)",
-                  (
-                      "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y"
-                      " Mediadores)"
-                  ),
-                  "STAI (Cuestionario de Ansiedad Estado-Rasgo)",
-                  "BDI-II (Inventario de Depresión de Beck)",
-                  "PAI (Inventario de Evaluación de la Personalidad)",
-              ],
-          )
-
-          # A) LSB-50
-          if test_seleccionado == "Listado de Síntomas Breve (LSB-50)":
-            st.subheader("Listado de Síntomas Breve (LSB-50)")
-            st.info("""
-                        **Instrucciones oficiales:**
-                        Conteste a cada una teniendo en cuenta aquello que haya sentido o experimentado **DURANTE LAS ÚLTIMAS SEMANAS, INCLUYENDO EL DÍA DE HOY**.
-                        * **0** = Nada | **1** = Poco | **2** = Moderadamente | **3** = Bastante | **4** = Mucho
-                        """)
-            respuestas_lsb = {}
-            with st.form("form_lsb50"):
-              for idx, preg in enumerate(ITEMS_LSB50, 1):
-                respuestas_lsb[f"p_{idx}"] = st.radio(
-                    preg,
-                    options=list(OPCIONES_LSB50.keys()),
-                    format_func=lambda x: OPCIONES_LSB50[x],
-                    horizontal=True,
-                    key=f"lsb_{idx}",
-                )
-                st.divider()
-              if st.form_submit_button(
-                  "Finalizar y Enviar LSB-50", use_container_width=True
-              ):
-                datos_token["evaluaciones"]["LSB-50"] = respuestas_lsb
-                datos_token["estado"] = "finalizado"
-                guardar_token_db(token_actual, datos_token)
-                st.session_state["test_enviado"] = True
-                st.rerun()
-
-          # Escala de Sucesos de Vida (Casullo)
-          elif test_seleccionado == "Escala de Sucesos de Vida (Casullo)":
-            st.subheader("Escala de Sucesos de Vida (M. M. Casullo)")
-            st.info("""
-                        **Instrucciones oficiales:**
-                        A continuación le presentamos una lista con experiencias de vida importantes. Si algunas de ellas le han pasado, por favor, señálelas tratando de asignarles un valor entre 1 y 5, teniendo en cuenta cuánto considera que le afectaron.
-                        * **1** = Nada | **2** = Poco | **3** = Algo | **4** = Bastante | **5** = Mucho
-                        """)
-            respuestas_casullo = {}
-            with st.form("form_casullo"):
-              for idx, preg in enumerate(ITEMS_CASULLO, 1):
-                st.markdown(f"**{preg}**")
-                val = st.radio(
-                    f"Valor asignado para: {preg}",
-                    options=list(OPCIONES_CASULLO.keys()),
-                    format_func=lambda x: OPCIONES_CASULLO[x],
-                    horizontal=True,
-                    key=f"casullo_val_{idx}",
-                )
-                sigue = st.checkbox(
-                    "Sigue afectando (ocurrido último año y sigue afectando)",
-                    key=f"casullo_sigue_{idx}",
-                )
-                respuestas_casullo[f"p_{idx}"] = {
-                    "valor": val,
-                    "sigue_afectando": sigue,
-                }
-                st.divider()
-              if st.form_submit_button(
-                  "Finalizar y Enviar Escala de Casullo",
-                  use_container_width=True,
-              ):
-                datos_token["evaluaciones"][
-                    "Escala de Sucesos de Vida (Casullo)"
-                ] = respuestas_casullo
-                datos_token["estado"] = "finalizado"
-                guardar_token_db(token_actual, datos_token)
-                st.session_state["test_enviado"] = True
-                st.rerun()
-
-          # B) MMPI-2-RF
-          elif (
-              test_seleccionado
-              == "MMPI-2-RF (Inventario Multifásico de Personalidad)"
-          ):
-            st.subheader("MMPI-2-RF")
-            st.info(
-                "Marque **Verdadero** o **Falso** según corresponda a su caso"
-                " habitual."
-            )
-            respuestas_mmpi = {}
-            with st.form("form_mmpi2rf"):
-              for idx, preg in enumerate(ITEMS_MMPI2RF, 1):
-                respuestas_mmpi[f"p_{idx}"] = st.radio(
-                    preg,
-                    options=OPCIONES_MMPI,
-                    horizontal=True,
-                    key=f"mmpi_{idx}",
-                )
-                st.divider()
-              if st.form_submit_button(
-                  "Finalizar y Enviar MMPI-2-RF", use_container_width=True
-              ):
-                datos_token["evaluaciones"]["MMPI-2-RF"] = respuestas_mmpi
-                datos_token["estado"] = "finalizado"
-                guardar_token_db(token_actual, datos_token)
-                st.session_state["test_enviado"] = True
-                st.rerun()
-
-          # C) CUIDA
-          elif (
-              test_seleccionado
-              == "CUIDA (Evaluación de Adoptantes, Cuidadores, Tutores y"
-              " Mediadores)"
-          ):
-            st.subheader("Cuestionario CUIDA")
-            st.info("Elija la alternativa de 1 a 4 según su grado de acuerdo.")
-            respuestas_cuida = {}
-            with st.form("form_cuida"):
-              for idx, preg in enumerate(ITEMS_CUIDA, 1):
-                respuestas_cuida[f"p_{idx}"] = st.radio(
-                    preg,
-                    options=list(OPCIONES_CUIDA.keys()),
-                    format_func=lambda x: OPCIONES_CUIDA[x],
-                    horizontal=True,
-                    key=f"cuida_{idx}",
-                )
-                st.divider()
-              if st.form_submit_button(
-                  "Finalizar y Enviar CUIDA", use_container_width=True
-              ):
-                datos_token["evaluaciones"]["CUIDA"] = respuestas_cuida
-                datos_token["estado"] = "finalizado"
-                guardar_token_db(token_actual, datos_token)
-                st.session_state["test_enviado"] = True
-                st.rerun()
-
-          # D) STAI
-          elif (
-              test_seleccionado == "STAI (Cuestionario de Ansiedad Estado-Rasgo)"
-          ):
-            st.subheader("STAI - Cuestionario de Ansiedad Estado-Rasgo")
-            st.info(
-                "Ítems 1-20 (Estado - Ahora mismo) | Ítems 21-40 (Rasgo - En"
-                " general)"
-            )
-            respuestas_stai = {}
-            with st.form("form_stai"):
-              for idx, preg in enumerate(ITEMS_STAI, 1):
-                respuestas_stai[f"p_{idx}"] = st.radio(
-                    preg,
-                    options=list(OPCIONES_STAI.keys()),
-                    format_func=lambda x: OPCIONES_STAI[x],
-                    horizontal=True,
-                    key=f"stai_{idx}",
-                )
-                st.divider()
-              if st.form_submit_button(
-                  "Finalizar y Enviar STAI", use_container_width=True
-              ):
-                datos_token["evaluaciones"]["STAI"] = respuestas_stai
-                datos_token["estado"] = "finalizado"
-                guardar_token_db(token_actual, datos_token)
-                st.session_state["test_enviado"] = True
-                st.rerun()
-
-          # E) BDI-II
-          elif test_seleccionado == "BDI-II (Inventario de Depresión de Beck)":
-            st.subheader("BDI-II - Inventario de Depresión de Beck")
-            st.info(
-                "Seleccione la frase que mejor describa cómo se ha sentido"
-                " durante las últimas dos semanas."
-            )
-            respuestas_bdi = {}
-            with st.form("form_bdii"):
-              for idx, item in enumerate(ITEMS_BDI, 1):
-                respuestas_bdi[f"p_{idx}"] = st.radio(
-                    item["titulo"],
-                    options=item["opciones"],
-                    key=f"bdi_{idx}",
-                )
-                st.divider()
-              if st.form_submit_button(
-                  "Finalizar y Enviar BDI-II", use_container_width=True
-              ):
-                datos_token["evaluaciones"]["BDI-II"] = respuestas_bdi
-                datos_token["estado"] = "finalizado"
-                guardar_token_db(token_actual, datos_token)
-                st.session_state["test_enviado"] = True
-                st.rerun()
-
-          # F) PAI
-          elif (
-              test_seleccionado
-              == "PAI (Inventario de Evaluación de la Personalidad)"
-          ):
-            st.subheader("PAI - Inventario de Evaluación de la Personalidad")
-            st.info("""
-                        **Instrucciones oficiales (TEA Ediciones):**
-                        Para cada afirmación, decida en qué medida describe su forma de ser, sus pensamientos, sentimientos y actitudes seleccionando:
-                        * **F** = Falso
-                        * **LV** = Ligeramente verdadero
-                        * **BV** = Bastante verdadero
-                        * **CV** = Completamente verdadero
-                        """)
-            respuestas_pai = {}
-            with st.form("form_pai"):
-              for idx, preg in enumerate(ITEMS_PAI, 1):
-                respuestas_pai[f"p_{idx}"] = st.radio(
-                    preg,
-                    options=list(OPCIONES_PAI.keys()),
-                    format_func=lambda x: OPCIONES_PAI[x],
-                    horizontal=True,
-                    key=f"pai_{idx}",
-                )
-                st.divider()
-              if st.form_submit_button(
-                  "Finalizar y Enviar PAI", use_container_width=True
-              ):
-                datos_token["evaluaciones"]["PAI"] = respuestas_pai
-                datos_token["estado"] = "finalizado"
-                guardar_token_db(token_actual, datos_token)
-                st.session_state["test_enviado"] = True
-                st.rerun()
+              datos_token["datos_persona"] = datos_persona
+              guardar_token_db(token_actual, datos_token)
+              st.success("Datos y consentimiento registrados correctamente.")
+              st.rerun()
