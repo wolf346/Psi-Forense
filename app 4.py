@@ -1579,7 +1579,7 @@ ITEMS_PAI = [
         " tiempo."
     ),
     "115. Es raro que tenga algunas dificultades para dormir.",
-    "116. A veces me irrito porque otras personas no comprenden mis plans.",
+    "116. A veces me irrito porque otras personas no comprenden mis planes.",
     "117. He dado mucho pero es poco lo que he recibido a cambio.",
     "118. Algunas veces me cuesta separar unos pensamientos de otros.",
     "119. A veces me comporto de forma desenfrenada e insensata.",
@@ -2111,6 +2111,9 @@ if st.session_state["perito_autenticado"]:
             )
             st.write(f"**Número de DNI:** {persona.get('dni', 'N/A')}")
             st.write(
+                f"**Localidad:** {persona.get('localidad', 'N/A')}"
+            )
+            st.write(
                 f"**Nacionalidad:** {persona.get('nacionalidad', 'N/A')}"
             )
             st.write(
@@ -2274,6 +2277,9 @@ else:
           dni_val = st.text_input(
               "Número de DNI / Documento:", autocomplete="off"
           )
+          localidad_val = st.text_input(
+              "Localidad de residencia:", autocomplete="off"
+          )
           nacionalidad_val = st.text_input(
               "Nacionalidad:", value="Argentina", autocomplete="off"
           )
@@ -2281,7 +2287,11 @@ else:
           guardar_datos = st.form_submit_button("Continuar al Consentimiento Informado", use_container_width=True)
 
           if guardar_datos:
-            if nombre_comp.strip() != "" and dni_val.strip() != "":
+            if (
+                nombre_comp.strip() != ""
+                and dni_val.strip() != ""
+                and localidad_val.strip() != ""
+            ):
               try:
                 tz_ba = ZoneInfo("America/Argentina/Buenos_Aires")
                 ahora_ba = datetime.now(tz_ba)
@@ -2292,7 +2302,7 @@ else:
               fecha_eval = ahora_ba.strftime("%Y-%m-%d")
               hora_eval = ahora_ba.strftime("%H:%M:%S")
 
-              str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{fecha_eval}-{hora_eval}-{ip_cliente}"
+              str_para_hash = f"{token_actual}-{nombre_comp.strip()}-{dni_val.strip()}-{localidad_val.strip()}-{fecha_eval}-{hora_eval}-{ip_cliente}"
               hash_generado = hashlib.sha256(
                   str_para_hash.encode("utf-8")
               ).hexdigest()
@@ -2300,6 +2310,7 @@ else:
               datos_token["datos_persona"] = {
                   "nombre": nombre_comp.strip(),
                   "dni": dni_val.strip(),
+                  "localidad": localidad_val.strip(),
                   "nacionalidad": nacionalidad_val.strip(),
                   "fecha": fecha_eval,
                   "hora": hora_eval,
@@ -2314,12 +2325,12 @@ else:
               st.rerun()
             else:
               st.warning(
-                  "Por favor complete Nombre, Apellido y DNI para poder"
+                  "Por favor complete Nombre, DNI y Localidad para poder"
                   " avanzar."
               )
 
       # -----------------------------------------------------------------------
-      # PASO 2: CONSENTIMIENTO INFORMADO (NUEVA ETAPA INTEGRADA)
+      # PASO 2: CONSENTIMIENTO INFORMADO
       # -----------------------------------------------------------------------
       elif not datos_token.get("datos_persona", {}).get(
           "consentimiento_aceptado", False
@@ -2327,18 +2338,20 @@ else:
         persona = datos_token["datos_persona"]
         fecha_eval = persona.get("fecha", "")
         hora_eval = persona.get("hora", "")
+        localidad_eval = persona.get("localidad", "N/A")
 
         st.subheader("📜 Consentimiento Informado Tele Evaluación Psicológica")
         st.info(
             f"Evaluado/a: **{persona['nombre']}** | DNI:"
-            f" **{persona['dni']}** | Nacionalidad:"
+            f" **{persona['dni']}** | Localidad:"
+            f" **{localidad_eval}** | Nacionalidad:"
             f" **{persona.get('nacionalidad', 'N/A')}**"
         )
 
         st.markdown(f"""
         **CONSENTIMIENTO INFORMADO TELE EVALUACIÓN PSICOLÓGICA**
         
-        **Lugar y Fecha:** Buenos Aires, {fecha_eval} ({hora_eval} hs)
+        **Lugar y Fecha:** {localidad_eval}, {fecha_eval} ({hora_eval} hs)
         
         Yo, **{persona['nombre']}**, identificado/a con DNI **{persona['dni']}**, de nacionalidad **{persona.get('nacionalidad', 'N/A')}**:
         
@@ -2388,6 +2401,7 @@ else:
 
         st.info(
             f"Evaluado: **{persona['nombre']}** | DNI: **{persona['dni']}** |"
+            f" Localidad: **{persona.get('localidad', 'N/A')}** |"
             " Consentimiento: **✅ Aceptado** | Hash:"
             f" `{persona['hash_identidad'][:10]}...`"
         )
