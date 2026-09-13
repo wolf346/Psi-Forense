@@ -134,7 +134,7 @@ try:
         ip = info_dict.get("ip_acceso", "Desconocida")
         ua = info_dict.get("user_agent", "Desconocida")
         
-        # Buscar si el token ya existe para actualizarlo o agregarlo como nueva fila
+       # Buscar si el token ya existe para actualizarlo o agregarlo como nueva fila
         cell = sheet.find(token)
         if cell:
             row_idx = cell.row
