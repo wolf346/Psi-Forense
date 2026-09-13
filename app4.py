@@ -113,22 +113,6 @@ TESTS_DISPONIBLES = [
     "PAI (Inventario de Evaluacion de la Personalidad)",
 ]
 
-CONSENTIMIENTO = """
-### Consentimiento Informado para Evaluacion Psicologica Forense
-
-Por favor lea atentamente antes de continuar:
-
-1. Naturaleza de la evaluacion: Usted participara en una evaluacion psicologica con fines periciales.
-2. Voluntariedad y confidencialidad: Sus datos seran tratados con estricta confidencialidad.
-3. Trazabilidad: El sistema registra fecha, hora e IP de forma anonimizada.
-4. Uso de los resultados: Solo para informe pericial.
-5. Derechos: Puede consultar o rectificar sus datos.
-
-Al marcar la casilla declara que ha leido y acepta participar.
-"""
-
-
-
 
 ITEMS_LSB50 = [
     "1. Mi corazón palpita o va muy deprisa.",
@@ -1546,6 +1530,17 @@ OPCIONES_PAI = {
 
 
 
+
+
+MAPA_TESTS = {
+    "LSB-50": "LSB-50",
+    "MCMI-III": "MCMI-III",
+    "CUIDA": "CUIDA",
+    "STAI": "STAI",
+    "BDI-II": "BDI-II",
+    "PAI": "PAI",
+}
+
 st.sidebar.title("⚖️ Sistema Forense Online")
 rol = st.sidebar.radio("¿Cómo querés ingresar?", ["🧑‍⚖️ Soy Perito (Admin)", "🧑 Soy Evaluado (con Token)"], index=0)
 
@@ -1560,69 +1555,144 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
             else:
                 st.error("Contraseña incorrecta")
         st.stop()
-    col_a, col_b, col_c = st.columns([2,2,2])
-    with col_a:
+
+    # Boton actualizar global como pediste
+    col_act_global, col_info, col_cerrar = st.columns([2,2,1])
+    with col_act_global:
         if st.button("🔄 ACTUALIZAR DATOS AHORA", type="primary", use_container_width=True):
-            st.session_state["data_version"] += 1
             st.cache_data.clear()
             st.rerun()
-    with col_b:
-        st.caption(f"Actualizado: {datetime.now(TZ).strftime('%d/%m %H:%M:%S')}")
-    with col_c:
+    with col_info:
+        st.caption(f"Actualizado: {datetime.now(TZ).strftime('%d/%m/%Y %H:%M:%S')}")
+    with col_cerrar:
         if st.button("Cerrar sesion"):
             st.session_state["perito_autenticado"] = False
             st.rerun()
+
     st.divider()
+
+    # Crear token sin expediente ni observaciones
+    st.subheader("1️⃣ Crear nuevo protocolo")
+    st.caption("El evaluado completará sus datos (nombre, DNI, localidad) y consentimiento. Vos solo generás el código.")
+
+    if st.button("Generar Link + Token", type="primary"):
+        nuevo_token = generar_token_unico()
+        ip, ua = obtener_metadatos_conexion()
+        guardar_token_db(nuevo_token, {
+            "estado": "activa",
+            "datos_persona": {},  # lo completa evaluado
+            "evaluaciones": {},
+            "ip_acceso": ip,
+            "user_agent": ua
+        })
+        st.success(f"¡Clave generada!: {nuevo_token}")
+        base_url = "https://psi-forense-knto5bo9aobIpy73lw34o6.streamlit.app"
+        link_completo = f"{base_url}/?token={nuevo_token}"
+        st.code(link_completo, language="text")
+        st.info("Copiá este link y envialo al evaluado por WhatsApp. Al hacer clic ingresa automático.")
+
+    st.divider()
+    st.subheader("📋 Estado de Claves y Evaluaciones - Código de Protocolo")
+
     datos = cargar_datos_db()
-    st.subheader("1️⃣ Crear nuevo token")
-    st.info("Ahora el evaluado completa sus datos. Vos solo cargas causa/expediente.")
-    with st.form("crear_token"):
-        causa = st.text_input("Causa / Expediente*")
-        obs = st.text_area("Observaciones internas (no las ve el evaluado)")
-        if st.form_submit_button("Generar Link + Token"):
-            if not causa:
-                st.error("Cargá al menos la causa")
-            else:
-                nuevo_token = generar_token_unico()
-                ip, ua = obtener_metadatos_conexion()
-                guardar_token_db(nuevo_token, {"estado": "activa", "datos_persona": {"causa": causa, "obs_perito": obs}, "evaluaciones": {}, "ip_acceso": ip, "user_agent": ua})
-                st.success(f"Token creado: {nuevo_token}")
-                base_url = "https://psi-forense-knto5bo9aobIpy73lw34o6.streamlit.app"
-                st.code(f"{base_url}?token={nuevo_token}", language="text")
-                st.rerun()
-    st.divider()
-    st.subheader(f"2️⃣ Evaluaciones ({len(datos)}) - Sin MMPI")
-    if datos:
+
+    if not datos:
+        st.warning("Aún no hay protocolos generados. Generá uno arriba.")
+    else:
+        # Boton descarga masiva arriba
         import pandas as pd, io, json
         filas=[]
         for tok,info in datos.items():
             dp=info.get("datos_persona") or {}
             evals=info.get("evaluaciones") or {}
-            filas.append({"Token":tok, "Nombre":f"{dp.get('nombre','')} {dp.get('apellido','')}".strip() or "-", "Edad":dp.get('edad','-'), "DNI":dp.get('dni','-'), "Localidad":dp.get('localidad','-'), "Causa":dp.get('causa','-'), "Consent": "Sí" if dp.get('consentimiento') else "No", "Tests": ", ".join(evals.keys()) if evals else "-", "Actualizado":str(info.get('fecha_actualizacion','-'))[:19]})
+            filas.append({
+                "Token":tok,
+                "Nombre":f"{dp.get('nombre','')} {dp.get('apellido','')}".strip() or "-",
+                "DNI":dp.get('dni','-'),
+                "Localidad":dp.get('localidad','-'),
+                "Consent": "Sí" if dp.get('consentimiento') else "No",
+                "Tests": ", ".join(evals.keys()) if evals else "-"
+            })
         df=pd.DataFrame(filas)
-        st.dataframe(df, use_container_width=True, hide_index=True)
         output_excel = io.BytesIO()
         with pd.ExcelWriter(output_excel, engine='openpyxl') as writer:
             df.to_excel(writer, sheet_name="Resumen", index=False)
-            for tok,info in datos.items():
-                for test_name, respuestas in info.get("evaluaciones",{}).items():
-                    try:
-                        df_resp = pd.DataFrame(list(respuestas.items()), columns=["Pregunta","Respuesta"])
-                        sheet = f"{tok}_{test_name}"[:31]
-                        df_resp.to_excel(writer, sheet_name=sheet, index=False)
-                    except: pass
         output_excel.seek(0)
-        c1,c2 = st.columns(2)
-        c1.download_button("📊 DESCARGAR EXCEL", data=output_excel, file_name=f"forense_{datetime.now(TZ).strftime('%Y%m%d_%H%M')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True, type="primary")
-        c2.download_button("📄 DESCARGAR JSON", data=json.dumps(datos, indent=2, ensure_ascii=False), file_name="backup.json", mime="application/json", use_container_width=True)
+        st.download_button("📊 DESCARGAR EXCEL DE TODOS", data=output_excel, file_name=f"forense_{datetime.now(TZ).strftime('%Y%m%d_%H%M')}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
         st.divider()
-        token_sel = st.selectbox("Ver detalle:", list(datos.keys()))
-        if token_sel:
-            st.json(datos[token_sel])
-            if st.button(f"Eliminar {token_sel}"):
-                eliminar_token_db(token_sel)
-                st.rerun()
+
+        for clave in list(datos.keys()):
+            info = datos[clave]
+            persona = info.get("datos_persona") or {}
+            evals = info.get("evaluaciones", {})
+            estado_token = info.get("estado", "activa")
+
+            col_texto, col_btn_ver, col_actualizar, col_borrar = st.columns([3.5, 1.8, 1.2, 1.0])
+
+            with col_texto:
+                if evals:
+                    nombre_str = f"{persona.get('nombre','')} {persona.get('apellido','')}".strip() or "Evaluado"
+                    tests_realizados = ", ".join(list(evals.keys()))
+                    st.markdown(f"🔴 **Código:** `{clave}` | **{nombre_str}** | **{tests_realizados}**")
+                elif persona.get('nombre'):
+                    st.markdown(f"🟡 **Código:** `{clave}` | **{persona.get('nombre')} {persona.get('apellido')}** | Datos completados")
+                else:
+                    st.markdown(f"🟢 **Código:** `{clave}` | **Disponible** - Sin completar")
+
+            with col_btn_ver:
+                if persona or evals:
+                    if f"modal_ver_{clave}" not in st.session_state:
+                        st.session_state[f"modal_ver_{clave}"] = False
+                    btn_label = "👁️ Ocultar" if st.session_state[f"modal_ver_{clave}"] else "👁️ Ver Protocolo" if evals else "👤 Ver Datos"
+                    if st.button(btn_label, key=f"btn_ver_{clave}", use_container_width=True):
+                        st.session_state[f"modal_ver_{clave}"] = not st.session_state[f"modal_ver_{clave}"]
+                        st.rerun()
+                else:
+                    st.write("_Sin datos_")
+
+            with col_actualizar:
+                if st.button("🔄 Actualizar", key=f"btn_actualizar_{clave}", use_container_width=True):
+                    st.rerun()
+
+            with col_borrar:
+                if st.button("🗑️ Borrar", key=f"btn_borrar_{clave}", use_container_width=True):
+                    if f"modal_ver_{clave}" in st.session_state:
+                        del st.session_state[f"modal_ver_{clave}"]
+                    eliminar_token_db(clave)
+                    st.rerun()
+
+            if st.session_state.get(f"modal_ver_{clave}", False):
+                with st.container():
+                    st.info(f"### 🛡️ Protocolo Forense - {clave}")
+                    if persona:
+                        st.write(f"**Nombre:** {persona.get('nombre','')} {persona.get('apellido','')}")
+                        st.write(f"**Edad:** {persona.get('edad','-')}")
+                        st.write(f"**DNI:** {persona.get('dni','-')}")
+                        st.write(f"**Localidad:** {persona.get('localidad','-')}")
+                        st.write(f"**Consentimiento:** {'✅ Sí - ' + persona.get('fecha_consentimiento','') if persona.get('consentimiento') else '❌ No'}")
+                    else:
+                        st.warning("Aún no completó datos.")
+
+                    st.write(f"**IP:** `{info.get('ip_acceso','-')}`")
+                    st.write(f"**Hash:** `{info.get('hash_bloque','-')}`")
+
+                    if evals:
+                        st.write("---")
+                        for test_nombre, respuestas_dict in evals.items():
+                            st.markdown(f"**{test_nombre}:** {len(respuestas_dict)} respuestas")
+                            # Tabla resumida
+                            try:
+                                import pandas as pd
+                                df_r = pd.DataFrame(list(respuestas_dict.items()), columns=["Pregunta","Respuesta"])
+                                st.dataframe(df_r, hide_index=True, use_container_width=True)
+                            except:
+                                st.json(respuestas_dict)
+
+                st.divider()
+
 else:
+    # EVALUADO
     st.title("Evaluación Psicológica Forense")
     query_params = st.query_params
     token_url = query_params.get("token", None)
@@ -1631,19 +1701,19 @@ else:
         st.session_state["token_actual"] = token_input.strip().upper()
     token_actual = st.session_state["token_actual"]
     if not token_actual:
-        st.info("Pedile a tu perito el token de acceso.")
+        st.info("Pedile a tu perito el código de protocolo.")
         st.stop()
     datos_db = cargar_datos_db()
     if token_actual not in datos_db:
-        st.error(f"Token {token_actual} no existe")
+        st.error(f"Código {token_actual} no existe")
         st.stop()
     datos_token = datos_db[token_actual]
     dp = datos_token.get("datos_persona") or {}
     datos_completos = all([dp.get('nombre'), dp.get('apellido'), dp.get('edad'), dp.get('dni'), dp.get('localidad'), dp.get('consentimiento')])
+
     if not datos_completos:
-        st.success(f"Token válido: {token_actual}")
+        st.success(f"Código válido: {token_actual}")
         st.subheader("Paso 1: Completá tus datos personales")
-        st.caption("Estos casilleros los completás vos, no el perito.")
         with st.form("form_datos_personales"):
             c1, c2 = st.columns(2)
             nombre = c1.text_input("Nombre*")
@@ -1653,28 +1723,33 @@ else:
             dni = c4.text_input("DNI*")
             localidad = c5.text_input("Localidad donde vivís*")
             st.divider()
-            st.markdown(CONSENTIMIENTO)
+            st.markdown("""
+            ### Consentimiento Informado
+            Usted participará en una evaluación psicológica con fines periciales. Sus datos serán tratados con estricta confidencialidad según Ley 26.657. 
+            Al aceptar, declara que ha leído y participa libremente. El sistema registra fecha, hora e IP con fines forenses.
+            """)
             consent = st.checkbox("✅ He leído y acepto el Consentimiento Informado*")
             if st.form_submit_button("Aceptar y Continuar a los Tests", type="primary", use_container_width=True):
                 if not (nombre and apellido and dni and localidad and edad and consent):
-                    st.error("Tenés que completar todos los campos con * y aceptar el consentimiento.")
+                    st.error("Completá todos los campos y aceptá el consentimiento.")
                 else:
-                    dp.update({"nombre": nombre.strip(), "apellido": apellido.strip(), "edad": int(edad), "dni": dni.strip(), "localidad": localidad.strip(), "consentimiento": True, "fecha_consentimiento": datetime.now(TZ).strftime("%d/%m/%Y %H:%M"), "causa": dp.get('causa',''), "obs_perito": dp.get('obs_perito','')})
+                    dp.update({"nombre": nombre.strip(), "apellido": apellido.strip(), "edad": int(edad), "dni": dni.strip(), "localidad": localidad.strip(), "consentimiento": True, "fecha_consentimiento": datetime.now(TZ).strftime("%d/%m/%Y %H:%M")})
                     datos_token["datos_persona"] = dp
                     datos_token["estado"] = "datos_completados"
                     ip, ua = obtener_metadatos_conexion()
                     datos_token["ip_acceso"] = ip
                     datos_token["user_agent"] = ua
                     guardar_token_db(token_actual, datos_token)
-                    st.success("Datos guardados.")
                     st.rerun()
         st.stop()
+
     if st.session_state["test_enviado"]:
-        st.success("✅ Tus respuestas fueron enviadas al perito. Ya podés cerrar.")
+        st.success("✅ Enviado al perito. Ya podés cerrar.")
         st.stop()
-    st.success(f"Bienvenido/a {dp.get('nombre')} {dp.get('apellido')} | DNI {dp.get('dni')} | {dp.get('localidad')}")
-    st.info(f"Consentimiento: {dp.get('fecha_consentimiento')} - Causa: {dp.get('causa','-')}")
-    test_seleccionado = st.selectbox("Seleccioná el test asignado", TESTS_DISPONIBLES)
+
+    st.success(f"Bienvenido/a {dp.get('nombre')} {dp.get('apellido')} | {dp.get('localidad')}")
+    test_seleccionado = st.selectbox("Seleccioná el test", ["LSB-50 (Listado de Sintomas Breve)", "MCMI-III (Inventario Clinico Multiaxial de Millon-III)", "CUIDA (Evaluacion de Adoptantes, Cuidadores, Tutores y Mediadores)", "STAI (Cuestionario de Ansiedad Estado-Rasgo)", "BDI-II (Inventario de Depresion de Beck)", "PAI (Inventario de Evaluacion de la Personalidad)"])
+
     if test_seleccionado.startswith("LSB-50"):
         st.subheader("LSB-50")
         respuestas={}
