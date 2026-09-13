@@ -1669,6 +1669,15 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                         st.write(f"**Localidad:** {persona.get('localidad','-')}")
                         st.write(f"**Consentimiento:** {'✅ Sí - ' + persona.get('fecha_consentimiento','') if persona.get('consentimiento') else '❌ No'}")
                     st.write(f"**IP:** `{info.get('ip_acceso','-')}`")
+                    st.write(f"**User-Agent:** `{info.get('user_agent','-')[:80]}`")
+                    st.write(f"**Hash del Bloque (Inalterabilidad):** `{info.get('hash_bloque','-')}`")
+                    # Generar hash de identidad para mostrar también
+                    import hashlib
+                    identidad_str = f"{persona.get('dni','')}-{persona.get('nombre','')}-{persona.get('apellido','')}"
+                    hash_id = hashlib.sha256(identidad_str.encode()).hexdigest()[:16] if identidad_str.strip('-') else "-"
+                    st.write(f"**Hash de Identidad (Integridad filiatoria):** `{hash_id}`")
+                    st.write(f"**Fecha Creación:** {info.get('fecha_creacion','-')}")
+                    st.write(f"**Última Actualización:** {info.get('fecha_actualizacion','-')}")
                     if evals:
                         st.write("---")
                         st.write("#### 📊 Respuestas con preguntas y puntaje:")
