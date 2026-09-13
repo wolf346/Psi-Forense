@@ -1,3 +1,4 @@
+
 import hashlib
 import json
 import random
@@ -8,16 +9,12 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import streamlit as st
 
-# Configuración general de la página
 st.set_page_config(
     page_title="Evaluaciones Psicológicas Forenses",
     page_icon="⚖️",
     layout="centered",
 )
 
-# -----------------------------------------------------------------------------
-# OCULTAR MENÚ, FOOTER Y CABECERA DE STREAMLIT (GITHUB / SHARE)
-# -----------------------------------------------------------------------------
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -27,98 +24,106 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE SEGURA (TRAZABILIDAD FORENSE)
-# -----------------------------------------------------------------------------
 CONTRASEÑA_MAESTRA = "MiClavePericial2026"
 DB_NAME = "forense_seguro.db"
-
 
 import gspread
 from google.oauth2.service_account import Credentials
 
 def init_db():
-    # Función de compatibilidad: con Google Sheets no requerimos inicializar bases de datos locales.
     pass
 
-def guardar_resultado_en_gsheets(datos_lista):
-    """Inserta los resultados de la evaluación directamente en Google Sheets."""
-    try:
-        sheet = _get_sheet()
-        sheet.append_row(datos_lista, value_input_option="USER_ENTERED")
-    except Exception as e:
-        st.error(f"Error al sincronizar con Google Sheets: {e}")
-def cargar_datos_db():
-    """Carga los registros de evaluaciones directamente desde Google Sheets y los mapea al formato de la app."""
-    try:
-        sheet = _get_sheet()
-        rows = sheet.get_all_values()
-        data = {}
-        if len(rows) > 1:
-            for row in rows[1:]:
-                if len(row) >= 7:
-                    # Soporta 7 u 8 columnas (con hash_prev)
-                    token = row[0]
-                    estado = row[1] if len(row) > 1 else "activa"
-                    dp = row[2] if len(row) > 2 else ""
-                    evals = row[3] if len(row) > 3 else "{}"
-                    ip = row[4] if len(row) > 4 else ""
-                    ua = row[5] if len(row) > 5 else ""
-                    h_prev = row[6] if len(row) > 6 else ""
-                    h_bloque = row[7] if len(row) > 7 else h_prev
-
-                    try:
-                        datos_p = json.loads(dp) if dp else None
-                    except:
-                        datos_p = None
-                    try:
-                        evals_p = json.loads(evals) if evals else {}
-                    except:
-                        evals_p = {}
-
-                    data[token] = {
-                        "estado": estado if estado else "activa",
-                        "datos_persona": datos_p,
-                        "evaluaciones": evals_p,
-                        "ip_acceso": ip,
-                        "user_agent": ua,
-                        "hash_anterior": h_prev,
-                        "hash_bloque": h_bloque,
-                    }
-        return data
-    except Exception as e:
-        st.error(f"Error al cargar datos desde Google Sheets: {e}")
-        print(f"[SHEETS ERROR cargar] {e}")
-        return {}
-
+@st.cache_resource(show_spinner=False)
 def _get_sheet():
-    """Helper centralizado para no repetir scopes y auth"""
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
     cred_dict = dict(st.secrets["gcp_service_account"])
+    if "private_key" in cred_dict:
+        cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n").replace("\n", "\n")
     creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
     client = gspread.authorize(creds)
     return client.open("Evaluaciones_Forenses").sheet1
 
-def guardar_token_db(token: str, info_dict: dict):
-    """Guarda/actualiza un token en Google Sheets con trazabilidad forense."""
+@st.cache_data(ttl=300, show_spinner=False)
+def cargar_datos_db_liviano():
+    """Solo carga lista de tokens y estado, NO los JSON pesados - carga instantánea"""
     try:
         sheet = _get_sheet()
-        rows = sheet.get_all_values()
+        # Solo columna A y B para carga inicial ultra rápida
+        col_a = sheet.col_values(1)  # tokens
+        col_b = sheet.col_values(2)  # estados
+        data = {}
+        for i, token in enumerate(col_a):
+            if i==0: continue # header
+            if not token: continue
+            estado = col_b[i] if i < len(col_b) else "activa"
+            data[token] = {"estado": estado}
+        return data
+    except Exception as e:
+        print(f"[LIVIANO ERROR] {e}")
+        return {}
 
-        # Obtener último hash de la cadena para trazabilidad
-        if len(rows) > 1:
-            ultimo_row = rows[-1]
-            hash_prev_cadena = ultimo_row[6] if len(ultimo_row) >= 7 else "GENESIS_BLOCK_FORENSE"
-        else:
-            hash_prev_cadena = "GENESIS_BLOCK_FORENSE"
+@st.cache_data(ttl=60, show_spinner=False)
+def cargar_token_completo(token_buscado: str):
+    """Carga un solo token completo con sus JSON - solo cuando se necesita"""
+    try:
+        sheet = _get_sheet()
+        try:
+            cell = sheet.find(token_buscado)
+            row = sheet.row_values(cell.row)
+            if len(row) >= 7:
+                def safe_json(s, default):
+                    try:
+                        return json.loads(s) if s else default
+                    except:
+                        return default
+                return {
+                    "estado": row[1] if len(row)>1 else "activa",
+                    "datos_persona": safe_json(row[2] if len(row)>2 else "", None),
+                    "evaluaciones": safe_json(row[3] if len(row)>3 else "{}", {}),
+                    "ip_acceso": row[4] if len(row)>4 else "",
+                    "user_agent": row[5] if len(row)>5 else "",
+                    "hash_anterior": row[6] if len(row)>6 else "",
+                    "hash_bloque": row[7] if len(row)>7 else row[6] if len(row)>6 else "",
+                }
+        except gspread.exceptions.CellNotFound:
+            return None
+    except Exception as e:
+        print(f"[COMPLETO ERROR] {e}")
+        return None
+    return None
 
-        # Calcular hashes si no vienen en el dict
-        hash_prev = info_dict.get("hash_anterior", hash_prev_cadena)
+def cargar_datos_db():
+    # Wrapper compatibilidad: ahora usa la versión liviana
+    # La app vieja espera todo cargado, pero devolvemos liviano y luego se carga completo por token
+    return cargar_datos_db_liviano()
+
+def guardar_resultado_en_gsheets(datos_lista):
+    try:
+        sheet = _get_sheet()
+        sheet.append_row(datos_lista, value_input_option="USER_ENTERED")
+        # Limpiar cache para que aparezca el nuevo token
+        cargar_datos_db_liviano.clear()
+        cargar_datos_db.clear()
+    except Exception as e:
+        st.error(f"Error al sincronizar con Google Sheets: {e}")
+
+def guardar_token_db(token: str, info_dict: dict):
+    try:
+        sheet = _get_sheet()
+        # Calcular hash si no existe
+        hash_prev = info_dict.get("hash_anterior", "")
         hash_actual = info_dict.get("hash_bloque", "")
         if not hash_actual:
+            # Buscar último hash rápido
+            try:
+                last_col = sheet.col_values(7)
+                hash_prev_cadena = last_col[-1] if len(last_col)>1 else "GENESIS_BLOCK_FORENSE"
+            except:
+                hash_prev_cadena = "GENESIS_BLOCK_FORENSE"
+            hash_prev = info_dict.get("hash_anterior", hash_prev_cadena)
             payload_str = f"{token}-{json.dumps(info_dict.get('evaluaciones'), ensure_ascii=False)}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
             hash_actual = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
             info_dict["hash_anterior"] = hash_prev
@@ -129,7 +134,6 @@ def guardar_token_db(token: str, info_dict: dict):
         evals = json.dumps(info_dict.get("evaluaciones"), ensure_ascii=False) if info_dict.get("evaluaciones") else "{}"
         ip = info_dict.get("ip_acceso", "Desconocida")
         ua = info_dict.get("user_agent", "Desconocida")
-
         fila = [token, estado, dp, evals, ip, ua, hash_prev, hash_actual]
 
         try:
@@ -137,38 +141,42 @@ def guardar_token_db(token: str, info_dict: dict):
             sheet.update(range_name=f"A{cell.row}:H{cell.row}", values=[fila])
         except gspread.exceptions.CellNotFound:
             sheet.append_row(fila, value_input_option="USER_ENTERED")
-
+        
+        # Limpiar caches
+        cargar_datos_db_liviano.clear()
+        cargar_datos_db.clear()
+        try:
+            cargar_token_completo.clear()
+        except:
+            pass
     except Exception as e:
         st.error(f"Error al guardar en Google Sheets: {e}")
-        print(f"[SHEETS ERROR guardar_token_db] {e}")
-
+        print(f"[GUARDAR ERROR] {e}")
 
 def eliminar_token_db(token):
-    """Elimina una evaluación de Google Sheets buscando por su token."""
     try:
         sheet = _get_sheet()
         try:
             cell = sheet.find(token)
             if cell:
                 sheet.delete_rows(cell.row)
+                cargar_datos_db_liviano.clear()
+                cargar_datos_db.clear()
+                try:
+                    cargar_token_completo.clear()
+                except:
+                    pass
         except gspread.exceptions.CellNotFound:
             pass
     except Exception as e:
         st.error(f"Error al eliminar de Google Sheets: {e}")
-        print(f"[SHEETS ERROR eliminar] {e}")
-
 
 def obtener_metadatos_conexion():
   try:
-    from streamlit.web.server.websocket_headers import (
-        _get_websocket_headers,
-    )
-
+    from streamlit.web.server.websocket_headers import _get_websocket_headers
     headers = _get_websocket_headers()
     if headers:
-      ip = headers.get(
-          "X-Forwarded-For", headers.get("Remote-Addr", "127.0.0.1")
-      )
+      ip = headers.get("X-Forwarded-For", headers.get("Remote-Addr", "127.0.0.1"))
       if "," in ip:
         ip = ip.split(",")[0].strip()
       ua = headers.get("User-Agent", "Desconocido")
@@ -178,7 +186,29 @@ def obtener_metadatos_conexion():
   return "IP_LOCAL_O_NO_DETECTADA", "Navegador_Estandar"
 
 
-claves_globales = cargar_datos_db()
+# PATCH: Sobrescribimos claves_globales con versión liviana cacheada
+if "claves_globales" not in st.session_state:
+    st.session_state["claves_globales"] = cargar_datos_db_liviano()
+claves_globales = st.session_state["claves_globales"]
+
+# Función helper para obtener token completo bajo demanda
+def get_token_data(token):
+    # Primero mira si ya está en cache completo
+    if f"token_{token}" in st.session_state:
+        return st.session_state[f"token_{token}"]
+    completo = cargar_token_completo(token)
+    if completo:
+        st.session_state[f"token_{token}"] = completo
+        # Actualizar también estado en claves_globales
+        if token in claves_globales:
+            claves_globales[token]["estado"] = completo.get("estado","activa")
+        else:
+            claves_globales[token] = {"estado": completo.get("estado","activa")}
+        return completo
+    # Si no existe completo, devolver lo liviano
+    return claves_globales.get(token)
+
+
 
 if "perito_autenticado" not in st.session_state:
   st.session_state["perito_autenticado"] = False
@@ -2468,7 +2498,7 @@ else:
   else:
     token_actual = st.session_state["token_activo"]
     claves_globales = cargar_datos_db()
-    datos_token = claves_globales.get(
+    datos_token = get_token_data(
         token_actual,
         {"estado": "activa", "datos_persona": None, "evaluaciones": {}},
     )
