@@ -44,125 +44,118 @@ def init_db():
 def guardar_resultado_en_gsheets(datos_lista):
     """Inserta los resultados de la evaluación directamente en Google Sheets."""
     try:
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        
-        # Carga las credenciales desde los secretos de Streamlit Cloud
-        cred_dict = dict(st.secrets["gcp_service_account"])
-        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
-        
-        # Conexión y guardado
-        client = gspread.authorize(creds)
-        
-        # IMPORTANTE: Reemplaza "Evaluaciones_Forenses" por el nombre exacto de tu Google Sheet en Drive
-        sheet = client.open("Evaluaciones_Forenses").sheet1
-        sheet.append_row(datos_lista)
+        sheet = _get_sheet()
+        sheet.append_row(datos_lista, value_input_option="USER_ENTERED")
     except Exception as e:
         st.error(f"Error al sincronizar con Google Sheets: {e}")
 def cargar_datos_db():
     """Carga los registros de evaluaciones directamente desde Google Sheets y los mapea al formato de la app."""
     try:
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        cred_dict = dict(st.secrets["gcp_service_account"])
-        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
-        
-        client = gspread.authorize(creds)
-        sheet = client.open("Evaluaciones_Forenses").sheet1
+        sheet = _get_sheet()
         rows = sheet.get_all_values()
-        
         data = {}
         if len(rows) > 1:
             for row in rows[1:]:
                 if len(row) >= 7:
-                    token, estado, dp, evals, ip, ua, h_bloque = row[0], row[1], row[2], row[3], row[4], row[5], row[6]
+                    # Soporta 7 u 8 columnas (con hash_prev)
+                    token = row[0]
+                    estado = row[1] if len(row) > 1 else "activa"
+                    dp = row[2] if len(row) > 2 else ""
+                    evals = row[3] if len(row) > 3 else "{}"
+                    ip = row[4] if len(row) > 4 else ""
+                    ua = row[5] if len(row) > 5 else ""
+                    h_prev = row[6] if len(row) > 6 else ""
+                    h_bloque = row[7] if len(row) > 7 else h_prev
+
+                    try:
+                        datos_p = json.loads(dp) if dp else None
+                    except:
+                        datos_p = None
+                    try:
+                        evals_p = json.loads(evals) if evals else {}
+                    except:
+                        evals_p = {}
+
                     data[token] = {
                         "estado": estado if estado else "activa",
-                        "datos_persona": json.loads(dp) if dp else None,
-                        "evaluaciones": json.loads(evals) if evals else {},
+                        "datos_persona": datos_p,
+                        "evaluaciones": evals_p,
                         "ip_acceso": ip,
                         "user_agent": ua,
+                        "hash_anterior": h_prev,
                         "hash_bloque": h_bloque,
                     }
         return data
     except Exception as e:
         st.error(f"Error al cargar datos desde Google Sheets: {e}")
+        print(f"[SHEETS ERROR cargar] {e}")
         return {}
 
-  # Obtener el último hash desde Google Sheets para mantener la cadena de bloques
+def _get_sheet():
+    """Helper centralizado para no repetir scopes y auth"""
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    cred_dict = dict(st.secrets["gcp_service_account"])
+    creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
+    client = gspread.authorize(creds)
+    return client.open("Evaluaciones_Forenses").sheet1
+
+def guardar_token_db(token: str, info_dict: dict):
+    """Guarda/actualiza un token en Google Sheets con trazabilidad forense."""
     try:
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        cred_dict = dict(st.secrets["gcp_service_account"])
-        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
-        client = gspread.authorize(creds)
-        sheet = client.open("Evaluaciones_Forenses").sheet1
+        sheet = _get_sheet()
         rows = sheet.get_all_values()
-        
+
+        # Obtener último hash de la cadena para trazabilidad
         if len(rows) > 1:
             ultimo_row = rows[-1]
-            hash_prev = ultimo_row[6] if len(ultimo_row) >= 7 else "GENESIS_BLOCK_FORENSE"
+            hash_prev_cadena = ultimo_row[6] if len(ultimo_row) >= 7 else "GENESIS_BLOCK_FORENSE"
         else:
-            hash_prev = "GENESIS_BLOCK_FORENSE"
-    except Exception:
-        hash_prev = "GENESIS_BLOCK_FORENSE"
+            hash_prev_cadena = "GENESIS_BLOCK_FORENSE"
 
-    payload_str = (
-        f"{token}-{json.dumps(info_dict.get('evaluaciones'))}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
-    )
-    hash_actual = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
+        # Calcular hashes si no vienen en el dict
+        hash_prev = info_dict.get("hash_anterior", hash_prev_cadena)
+        hash_actual = info_dict.get("hash_bloque", "")
+        if not hash_actual:
+            payload_str = f"{token}-{json.dumps(info_dict.get('evaluaciones'), ensure_ascii=False)}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
+            hash_actual = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
+            info_dict["hash_anterior"] = hash_prev
+            info_dict["hash_bloque"] = hash_actual
 
-try:
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        cred_dict = dict(st.secrets["gcp_service_account"])
-        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
-        client = gspread.authorize(creds)
-        sheet = client.open("Evaluaciones_Forenses").sheet1
-        
         estado = info_dict.get("estado", "activa")
-        dp = json.dumps(info_dict.get("datos_persona")) if info_dict.get("datos_persona") else ""
-        evals = json.dumps(info_dict.get("evaluaciones")) if info_dict.get("evaluaciones") else "{}"
+        dp = json.dumps(info_dict.get("datos_persona"), ensure_ascii=False) if info_dict.get("datos_persona") else ""
+        evals = json.dumps(info_dict.get("evaluaciones"), ensure_ascii=False) if info_dict.get("evaluaciones") else "{}"
         ip = info_dict.get("ip_acceso", "Desconocida")
         ua = info_dict.get("user_agent", "Desconocida")
-        
-        hash_prev = info_dict.get("hash_anterior", "")
-        hash_actual = info_dict.get("hash_bloque", "")
 
-        cell = sheet.find(token)
-        if cell:
-            row_idx = cell.row
-            sheet.update(f"A{row_idx}:H{row_idx}", [[token, estado, dp, evals, ip, ua, hash_prev, hash_actual]])
-        else:
-            sheet.append_row([token, estado, dp, evals, ip, ua, hash_prev, hash_actual])
+        fila = [token, estado, dp, evals, ip, ua, hash_prev, hash_actual]
+
+        try:
+            cell = sheet.find(token)
+            sheet.update(range_name=f"A{cell.row}:H{cell.row}", values=[fila])
+        except gspread.exceptions.CellNotFound:
+            sheet.append_row(fila, value_input_option="USER_ENTERED")
+
     except Exception as e:
         st.error(f"Error al guardar en Google Sheets: {e}")
+        print(f"[SHEETS ERROR guardar_token_db] {e}")
+
 
 def eliminar_token_db(token):
     """Elimina una evaluación de Google Sheets buscando por su token."""
     try:
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"
-        ]
-        cred_dict = dict(st.secrets["gcp_service_account"])
-        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
-        client = gspread.authorize(creds)
-        sheet = client.open("Evaluaciones_Forenses").sheet1
-        
-        cell = sheet.find(token)
-        if cell:
-            sheet.delete_rows(cell.row)
-        except Exception as e:
+        sheet = _get_sheet()
+        try:
+            cell = sheet.find(token)
+            if cell:
+                sheet.delete_rows(cell.row)
+        except gspread.exceptions.CellNotFound:
+            pass
+    except Exception as e:
         st.error(f"Error al eliminar de Google Sheets: {e}")
+        print(f"[SHEETS ERROR eliminar] {e}")
 
 
 def obtener_metadatos_conexion():
