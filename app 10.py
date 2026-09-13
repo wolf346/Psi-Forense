@@ -5,15 +5,15 @@ import string
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import streamlit as st
-# Conexión automática a Supabase (PostgreSQL)
 
-conn = st.connection("postgresql", type="sql")
 # Configuración general de la página
 st.set_page_config(
     page_title="Evaluaciones Psicológicas Forenses",
     page_icon="⚖️",
     layout="centered",
 )
+# Conexión automática a Supabase (PostgreSQL)
+conn = st.connection("postgresql", type="sql")
 
 # -----------------------------------------------------------------------------
 # OCULTAR MENÚ, FOOTER Y CABECERA DE STREAMLIT (GITHUB / SHARE)
