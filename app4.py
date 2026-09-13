@@ -118,25 +118,31 @@ def cargar_datos_db():
     )
     hash_actual = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
 
-  cursor.execute(
-      """
-        INSERT OR REPLACE INTO evaluaciones_periciales 
-        (token, estado, datos_persona, evaluaciones, ip_acceso, user_agent, hash_anterior, hash_bloque)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """,
-      (
-          token,
-          info_dict.get("estado", "activa"),
-          json.dumps(info_dict.get("datos_persona")),
-          json.dumps(info_dict.get("evaluaciones", {})),
-          info_dict.get("ip_acceso", "Desconocida"),
-          info_dict.get("user_agent", "Desconocido"),
-          hash_prev,
-          hash_actual,
-      ),
-  )
-  conn.commit()
-  conn.close()
+try:
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        cred_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
+        client = gspread.authorize(creds)
+        sheet = client.open("Evaluaciones_Forenses").sheet1
+        
+        estado = info_dict.get("estado", "activa")
+        dp = json.dumps(info_dict.get("datos_persona")) if info_dict.get("datos_persona") else ""
+        evals = json.dumps(info_dict.get("evaluaciones")) if info_dict.get("evaluaciones") else "{}"
+        ip = info_dict.get("ip_acceso", "Desconocida")
+        ua = info_dict.get("user_agent", "Desconocida")
+        
+        # Buscar si el token ya existe para actualizarlo o agregarlo como nueva fila
+        cell = sheet.find(token)
+        if cell:
+            row_idx = cell.row
+            sheet.update(f"A{row_idx}:H{row_idx}", [[token, estado, dp, evals, ip, ua, hash_prev, hash_actual]])
+        else:
+            sheet.append_row([token, estado, dp, evals, ip, ua, hash_prev, hash_actual])
+    except Exception as e:
+        st.error(f"Error al guardar en Google Sheets: {e}")
 
 
 def eliminar_token_db(token):
