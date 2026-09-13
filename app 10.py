@@ -5,7 +5,6 @@ import string
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 import streamlit as st
-import psycopg2
 
 # Configuración general de la página
 st.set_page_config(
