@@ -1740,11 +1740,21 @@ else:
     <style>
     input { autocomplete: off !important; }
     </style>
+    <script>
+    // Desactivar autocompletado agresivo
+    setTimeout(() => {
+        document.querySelectorAll("input").forEach(i => {
+            i.setAttribute("autocomplete","new-password");
+            i.setAttribute("autocorrect","off");
+            i.setAttribute("spellcheck","false");
+        });
+    }, 500);
+    </script>
     """, unsafe_allow_html=True)
 
     c_tok, c_btn = st.columns([4,1])
     with c_tok:
-        token_input = st.text_input("Ingresá tu TOKEN", value=token_url if token_url else "", placeholder="EVAL-XXXXXX", key="input_token_eval", autocomplete="off")
+        token_input = st.text_input("Ingresá tu TOKEN", value=token_url if token_url else "", placeholder="EVAL-XXXXXX", key="input_token_eval", autocomplete="new-password")
     with c_btn:
         st.write("")
         st.write("")
@@ -1776,12 +1786,12 @@ else:
         st.subheader("Paso 1: Completá tus datos personales")
         with st.form("form_datos_personales"):
             c1, c2 = st.columns(2)
-            nombre = c1.text_input("Nombre*", autocomplete="off", key="nombre_eval")
-            apellido = c2.text_input("Apellido*", autocomplete="off", key="apellido_eval")
+            nombre = c1.text_input("Nombre*", autocomplete="new-password", key="nombre_eval_v3")
+            apellido = c2.text_input("Apellido*", autocomplete="new-password", key="apellido_eval_v3")
             c3, c4, c5 = st.columns(3)
             edad = c3.number_input("Edad*", min_value=6, max_value=100, value=18)
-            dni = c4.text_input("DNI*", autocomplete="off", key="dni_eval")
-            localidad = c5.text_input("Localidad donde vivís*", autocomplete="off", key="loc_eval")
+            dni = c4.text_input("DNI*", autocomplete="new-password", key="dni_eval_v3")
+            localidad = c5.text_input("Localidad donde vivís*", autocomplete="new-password", key="loc_eval_v3")
             st.divider()
             st.markdown("""
             ### Consentimiento Informado
