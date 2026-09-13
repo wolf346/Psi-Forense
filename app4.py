@@ -1541,6 +1541,8 @@ MAPA_TESTS = {
     "PAI": "PAI",
 }
 
+
+
 st.sidebar.title("⚖️ Sistema Forense Online")
 rol = st.sidebar.radio("¿Cómo querés ingresar?", ["🧑‍⚖️ Soy Perito (Admin)", "🧑 Soy Evaluado (con Token)"], index=0)
 
@@ -1556,7 +1558,6 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                 st.error("Contraseña incorrecta")
         st.stop()
 
-    # Boton actualizar global como pediste
     col_act_global, col_info, col_cerrar = st.columns([2,2,1])
     with col_act_global:
         if st.button("🔄 ACTUALIZAR DATOS AHORA", type="primary", use_container_width=True):
@@ -1570,8 +1571,6 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
             st.rerun()
 
     st.divider()
-
-    # Crear token sin expediente ni observaciones
     st.subheader("1️⃣ Crear nuevo protocolo")
     st.caption("El evaluado completará sus datos (nombre, DNI, localidad) y consentimiento. Vos solo generás el código.")
 
@@ -1580,7 +1579,7 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
         ip, ua = obtener_metadatos_conexion()
         guardar_token_db(nuevo_token, {
             "estado": "activa",
-            "datos_persona": {},  # lo completa evaluado
+            "datos_persona": {},
             "evaluaciones": {},
             "ip_acceso": ip,
             "user_agent": ua
@@ -1589,7 +1588,7 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
         base_url = "https://psi-forense-knto5bo9aobIpy73lw34o6.streamlit.app"
         link_completo = f"{base_url}/?token={nuevo_token}"
         st.code(link_completo, language="text")
-        st.info("Copiá este link y envialo por WhatsApp. Vos podés quedarte como Perito logueado y probar el link en otra pestaña de incógnito - no necesitás cerrar sesión de perito. El evaluado puede hacer los 6 tests seguidos con el mismo código sin salir.")
+        st.info("Copiá este link y envialo por WhatsApp. Podés quedarte como Perito logueado y probar en incógnito. El evaluado puede hacer los 6 tests con el mismo código.")
 
     st.divider()
     st.subheader("📋 Estado de Claves y Evaluaciones - Código de Protocolo")
@@ -1597,9 +1596,8 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
     datos = cargar_datos_db()
 
     if not datos:
-        st.warning("Aún no hay protocolos generados. Generá uno arriba.")
+        st.warning("Aún no hay protocolos generados.")
     else:
-        # Boton descarga masiva arriba
         import pandas as pd, io, json
         filas=[]
         for tok,info in datos.items():
@@ -1626,7 +1624,6 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
             info = datos[clave]
             persona = info.get("datos_persona") or {}
             evals = info.get("evaluaciones", {})
-            estado_token = info.get("estado", "activa")
 
             col_texto, col_btn_ver, col_actualizar, col_borrar = st.columns([3.5, 1.8, 1.2, 1.0])
 
@@ -1638,7 +1635,7 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                 elif persona.get('nombre'):
                     st.markdown(f"🟡 **Código:** `{clave}` | **{persona.get('nombre')} {persona.get('apellido')}** | Datos completados")
                 else:
-                    st.markdown(f"🟢 **Código:** `{clave}` | **Disponible** - Sin completar")
+                    st.markdown(f"🟢 **Código:** `{clave}` | **Disponible**")
 
             with col_btn_ver:
                 if persona or evals:
@@ -1671,145 +1668,95 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
                         st.write(f"**DNI:** {persona.get('dni','-')}")
                         st.write(f"**Localidad:** {persona.get('localidad','-')}")
                         st.write(f"**Consentimiento:** {'✅ Sí - ' + persona.get('fecha_consentimiento','') if persona.get('consentimiento') else '❌ No'}")
-                    else:
-                        st.warning("Aún no completó datos.")
-
                     st.write(f"**IP:** `{info.get('ip_acceso','-')}`")
-                    st.write(f"**Hash:** `{info.get('hash_bloque','-')}`")
-
                     if evals:
                         st.write("---")
                         st.write("#### 📊 Respuestas con preguntas y puntaje:")
                         for test_nombre, respuestas_dict in evals.items():
-                            st.markdown(f"### {test_nombre}: {len(respuestas_dict)} respuestas")
+                            st.markdown(f"**{test_nombre}**")
                             try:
-                                import pandas as pd
                                 tabla=[]
                                 for p_key, resp_val in respuestas_dict.items():
                                     try:
-                                        num = int(p_key.split("_")[1]) - 1
+                                        num = int(p_key.split('_')[1]) - 1
                                     except:
                                         num = 0
-                                    # Obtener texto pregunta según test
                                     pregunta_texto = p_key
                                     puntaje_texto = str(resp_val)
                                     try:
                                         if "LSB-50" in test_nombre and num < len(ITEMS_LSB50):
                                             pregunta_texto = ITEMS_LSB50[num]
-                                            # resp_val es 0-4
                                             etiqueta = OPCIONES_LSB50.get(str(resp_val), OPCIONES_LSB50.get(resp_val, str(resp_val)))
                                             puntaje_texto = f"{resp_val} - {etiqueta}"
                                         elif "MCMI-III" in test_nombre and num < len(ITEMS_MCMIIII):
                                             pregunta_texto = ITEMS_MCMIIII[num]
-                                            puntaje_texto = str(resp_val)
                                         elif "CUIDA" in test_nombre and num < len(ITEMS_CUIDA):
                                             pregunta_texto = ITEMS_CUIDA[num]
                                             etiqueta = OPCIONES_CUIDA.get(str(resp_val), OPCIONES_CUIDA.get(resp_val, str(resp_val)))
                                             puntaje_texto = f"{resp_val} - {etiqueta}"
                                         elif "STAI" in test_nombre and num < len(ITEMS_STAI):
                                             pregunta_texto = ITEMS_STAI[num]
-                                            etiqueta = OPCIONES_STAI.get(str(resp_val), OPCIONES_STAI.get(resp_val, str(resp_val)))
-                                            puntaje_texto = f"{resp_val} - {etiqueta}"
                                         elif "BDI-II" in test_nombre and num < len(ITEMS_BDI):
-                                            item_bdi = ITEMS_BDI[num] if num < len(ITEMS_BDI) else {}
-                                            pregunta_texto = item_bdi.get('titulo', f"Ítem {num+1}")
-                                            puntaje_texto = str(resp_val)
+                                            pregunta_texto = ITEMS_BDI[num].get('titulo', f"Ítem {num+1}")
                                         elif "PAI" in test_nombre and num < len(ITEMS_PAI):
                                             pregunta_texto = ITEMS_PAI[num]
-                                            etiqueta = OPCIONES_PAI.get(str(resp_val), OPCIONES_PAI.get(resp_val, str(resp_val)))
-                                            puntaje_texto = f"{resp_val} - {etiqueta}"
                                     except:
                                         pass
-                                    tabla.append({"Nº": num+1, "Pregunta": pregunta_texto, "Respuesta / Puntaje": puntaje_texto})
+                                    tabla.append({"Nº": num+1, "Pregunta": pregunta_texto, "Respuesta": puntaje_texto})
                                 df_r = pd.DataFrame(tabla)
                                 st.dataframe(df_r, hide_index=True, use_container_width=True)
                             except Exception as e:
-                                st.error(f"Error mostrando: {e}")
                                 st.json(respuestas_dict)
-
                 st.divider()
 
 else:
-    # EVALUADO
     st.title("Evaluación Psicológica Forense")
-
+    
+    # Manejo de token por URL o manual - SIMPLE Y FUNCIONAL
     query_params = st.query_params
     token_url = query_params.get("token", None)
     
-    # Anti-autocompletado ultra agresivo - inyecta en head
-    st.markdown("""
-    <style>
-    /* Oculta el icono de autocompletado de Chrome */
-    input::-webkit-contacts-auto-fill-button { visibility: hidden; display: none !important; }
-    input::-webkit-credentials-auto-fill-button { visibility: hidden; display: none !important; }
-    </style>
-    <script>
-    function disableAuto(){
-        document.querySelectorAll('input').forEach(inp=>{
-            inp.setAttribute('autocomplete','off');
-            inp.setAttribute('autocorrect','off');
-            inp.setAttribute('spellcheck','false');
-            inp.setAttribute('autocapitalize','off');
-            // Nombre aleatorio para romper historial
-            if(inp.placeholder && inp.placeholder.includes('EVAL')){
-                inp.setAttribute('name','token_' + Math.random().toString(36).substring(7));
-                inp.setAttribute('id','token_' + Math.random().toString(36).substring(7));
-            }
-        });
-        document.querySelectorAll('form').forEach(f=>f.setAttribute('autocomplete','off'));
-    }
-    setTimeout(disableAuto, 100);
-    setTimeout(disableAuto, 500);
-    setTimeout(disableAuto, 1500);
-    setInterval(disableAuto, 2000);
-    </script>
-    """, unsafe_allow_html=True)
-
-    # Inicializar control de cambio de token
-    if "ultimo_token_visto" not in st.session_state:
-        st.session_state["ultimo_token_visto"] = None
-
+    # Si viene por URL y no hay token actual, usarlo
+    if token_url and not st.session_state.get("token_actual"):
+        st.session_state["token_actual"] = token_url.strip().upper()
+    
     c_tok, c_btn = st.columns([4,1])
     with c_tok:
-        # Key con random para romper cache del navegador
-        import random, string
-        random_suffix = ''.join(random.choices(string.ascii_lowercase, k=5))
-        token_input = st.text_input("Ingresá tu TOKEN", value=token_url if token_url else "", placeholder="EVAL-XXXXXX", key=f"input_token_eval_{random_suffix}", autocomplete="off")
+        token_input = st.text_input("Ingresá tu TOKEN", value=st.session_state.get("token_actual",""), placeholder="EVAL-XXXXXX", key="token_input_final", autocomplete="off")
     with c_btn:
         st.write("")
         st.write("")
-        btn_entrar = st.button("Entrar", type="primary", use_container_width=True, key="btn_entrar_token")
+        btn_entrar = st.button("Entrar", type="primary", use_container_width=True)
+
+    # Si aprieta Entrar, guardar
+    if btn_entrar:
+        if token_input:
+            nuevo = token_input.strip().upper()
+            # Si cambia de token, resetear estado
+            if st.session_state.get("token_actual") != nuevo:
+                st.session_state["test_enviado"] = False
+            st.session_state["token_actual"] = nuevo
+            st.rerun()
     
-    # Detectar cambio de token
-    token_a_usar = None
-    if btn_entrar and token_input:
-        token_a_usar = token_input.strip().upper()
-    elif token_url:
-        token_a_usar = token_url.strip().upper()
-    
-    if token_a_usar:
-        # Si cambió el token, resetear todo el flujo
-        if st.session_state["ultimo_token_visto"] != token_a_usar:
-            st.session_state["token_actual"] = token_a_usar
-            st.session_state["ultimo_token_visto"] = token_a_usar
-            st.session_state["test_enviado"] = False
-            st.session_state["datos_personales_ok"] = False
-            # Limpiar modales
-            keys_to_del = [k for k in st.session_state.keys() if k.startswith("modal_ver_")]
-            for k in keys_to_del:
-                del st.session_state[k]
-        else:
-            st.session_state["token_actual"] = token_a_usar
+    # Si el usuario escribe y presiona Enter (sin boton), Streamlit hace rerun y token_input ya tiene valor
+    # Entonces si token_input != token_actual, actualizar
+    if token_input and token_input.strip().upper() != st.session_state.get("token_actual"):
+        # Solo si dio Enter (el valor cambió)
+        pass  # El boton es el que confirma, para evitar que escribiendo se dispare
 
     token_actual = st.session_state.get("token_actual")
     if not token_actual:
-        st.info("Pedile a tu perito el código de protocolo y apretá Entrar.")
+        st.info("Pedile a tu perito el código y apretá Entrar. También podés entrar directo con el link ?token=EVAL-XXXX")
         st.stop()
 
     datos_db = cargar_datos_db()
     if token_actual not in datos_db:
-        st.error(f"Código {token_actual} no existe")
+        st.error(f"Código {token_actual} no existe o fue borrado. Pedí uno nuevo.")
+        if st.button("Borrar código y volver"):
+            st.session_state["token_actual"] = None
+            st.rerun()
         st.stop()
+
     datos_token = datos_db[token_actual]
     dp = datos_token.get("datos_persona") or {}
     datos_completos = all([dp.get('nombre'), dp.get('apellido'), dp.get('edad'), dp.get('dni'), dp.get('localidad'), dp.get('consentimiento')])
@@ -1819,35 +1766,42 @@ else:
         st.subheader("Paso 1: Completá tus datos personales")
         with st.form("form_datos_personales"):
             c1, c2 = st.columns(2)
-            nombre = c1.text_input("Nombre*", autocomplete="new-password", key="nombre_eval_v3")
-            apellido = c2.text_input("Apellido*", autocomplete="new-password", key="apellido_eval_v3")
+            nombre = c1.text_input("Nombre*", autocomplete="off")
+            apellido = c2.text_input("Apellido*", autocomplete="off")
             c3, c4, c5 = st.columns(3)
             edad = c3.number_input("Edad*", min_value=6, max_value=100, value=18)
-            dni = c4.text_input("DNI*", autocomplete="new-password", key="dni_eval_v3")
-            localidad = c5.text_input("Localidad donde vivís*", autocomplete="new-password", key="loc_eval_v3")
+            dni = c4.text_input("DNI*", autocomplete="off")
+            localidad = c5.text_input("Localidad donde vivís*", autocomplete="off")
             st.divider()
-            st.markdown("""
-            ### Consentimiento Informado
-            Usted participará en una evaluación psicológica con fines periciales. Sus datos serán tratados con estricta confidencialidad según Ley 26.657. 
-            Al aceptar, declara que ha leído y participa libremente. El sistema registra fecha, hora e IP con fines forenses.
-            """)
+            st.markdown("### Consentimiento Informado\nUsted participará en evaluación psicológica forense. Datos confidenciales Ley 26.657.")
             consent = st.checkbox("✅ He leído y acepto el Consentimiento Informado*")
             if st.form_submit_button("Aceptar y Continuar a los Tests", type="primary", use_container_width=True):
                 if not (nombre and apellido and dni and localidad and edad and consent):
-                    st.error("Completá todos los campos y aceptá el consentimiento.")
+                    st.error("Completá todo y aceptá consentimiento.")
                 else:
                     dp.update({"nombre": nombre.strip(), "apellido": apellido.strip(), "edad": int(edad), "dni": dni.strip(), "localidad": localidad.strip(), "consentimiento": True, "fecha_consentimiento": datetime.now(TZ).strftime("%d/%m/%Y %H:%M")})
                     datos_token["datos_persona"] = dp
-                    datos_token["estado"] = "datos_completados"
-                    ip, ua = obtener_metadatos_conexion()
-                    datos_token["ip_acceso"] = ip
-                    datos_token["user_agent"] = ua
                     guardar_token_db(token_actual, datos_token)
                     st.rerun()
         st.stop()
 
-    if st.session_state["test_enviado"]:
-        st.success("✅ Enviado al perito. Ya podés cerrar.")
+    # Pantalla de enviado - permite hacer otro test sin cerrar
+    if st.session_state.get("test_enviado"):
+        evals_hechas = datos_token.get("evaluaciones", {})
+        st.success(f"✅ Test enviado. Llevás {len(evals_hechas)} test(s) con este código.")
+        for t in evals_hechas.keys():
+            st.markdown(f"- ✅ {t}")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("📝 Realizar otro test", type="primary", use_container_width=True):
+                st.session_state["test_enviado"] = False
+                st.rerun()
+        with c2:
+            if st.button("🚪 Salir", use_container_width=True):
+                st.session_state["token_actual"] = None
+                st.session_state["test_enviado"] = False
+                st.query_params.clear()
+                st.rerun()
         st.stop()
 
     st.success(f"Bienvenido/a {dp.get('nombre')} {dp.get('apellido')} | {dp.get('localidad')}")
