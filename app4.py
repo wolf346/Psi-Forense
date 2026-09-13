@@ -1,6 +1,7 @@
 import hashlib
 import json
 import random
+import sqlite3
 import string
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -12,8 +13,6 @@ st.set_page_config(
     page_icon="⚖️",
     layout="centered",
 )
-# Conexión automática a Supabase (PostgreSQL)
-conn = st.connection("postgresql", type="sql")
 
 # -----------------------------------------------------------------------------
 # OCULTAR MENÚ, FOOTER Y CABECERA DE STREAMLIT (GITHUB / SHARE)
@@ -28,23 +27,14 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURACIÓN Y BASE DE DATOS POSTGRESQL SEGURA EN LA NUBE (SUPABASE)
+# 1. CONFIGURACIÓN Y BASE DE DATOS SQLITE SEGURA (TRAZABILIDAD FORENSE)
 # -----------------------------------------------------------------------------
-CONTRASEÑA_MAESTRA = st.secrets.get("CONTRASEÑA_MAESTRA", "MiClavePericial2026")
+CONTRASEÑA_MAESTRA = "MiClavePericial2026"
+DB_NAME = "forense_seguro.db"
 
-def get_db_connection():
-    db_config = st.secrets["postgres"]
-    conn = psycopg2.connect(
-        host=db_config["host"],
-        database=db_config["database"],
-        user=db_config["user"],
-        password=db_config["password"],
-        port=db_config["port"]
-    )
-    return conn
 
 def init_db():
-  conn = get_db_connection()
+  conn = sqlite3.connect(DB_NAME, check_same_thread=False)
   cursor = conn.cursor()
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS evaluaciones_periciales (
@@ -59,20 +49,20 @@ def init_db():
         )
     """)
   conn.commit()
-  cursor.close()
   conn.close()
+
 
 init_db()
 
+
 def cargar_datos_db():
-  conn = get_db_connection()
+  conn = sqlite3.connect(DB_NAME, check_same_thread=False)
   cursor = conn.cursor()
   cursor.execute(
       "SELECT token, estado, datos_persona, evaluaciones, ip_acceso,"
       " user_agent, hash_bloque FROM evaluaciones_periciales"
   )
   rows = cursor.fetchall()
-  cursor.close()
   conn.close()
 
   data = {}
@@ -88,12 +78,14 @@ def cargar_datos_db():
     }
   return data
 
+
 def guardar_token_db(token, info_dict):
-  conn = get_db_connection()
+  conn = sqlite3.connect(DB_NAME, check_same_thread=False)
   cursor = conn.cursor()
 
   cursor.execute(
-      "SELECT hash_bloque FROM evaluaciones_periciales ORDER BY ctid DESC LIMIT 1"
+      "SELECT hash_bloque FROM evaluaciones_periciales ORDER BY rowid DESC"
+      " LIMIT 1"
   )
   ultimo = cursor.fetchone()
   hash_prev = ultimo[0] if ultimo and ultimo[0] else "GENESIS_BLOCK_FORENSE"
@@ -105,18 +97,9 @@ def guardar_token_db(token, info_dict):
 
   cursor.execute(
       """
-        INSERT INTO evaluaciones_periciales 
+        INSERT OR REPLACE INTO evaluaciones_periciales 
         (token, estado, datos_persona, evaluaciones, ip_acceso, user_agent, hash_anterior, hash_bloque)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (token) 
-        DO UPDATE SET 
-            estado = EXCLUDED.estado,
-            datos_persona = EXCLUDED.datos_persona,
-            evaluaciones = EXCLUDED.evaluaciones,
-            ip_acceso = EXCLUDED.ip_acceso,
-            user_agent = EXCLUDED.user_agent,
-            hash_anterior = EXCLUDED.hash_anterior,
-            hash_bloque = EXCLUDED.hash_bloque
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """,
       (
           token,
@@ -130,18 +113,18 @@ def guardar_token_db(token, info_dict):
       ),
   )
   conn.commit()
-  cursor.close()
   conn.close()
 
+
 def eliminar_token_db(token):
-  conn = get_db_connection()
+  conn = sqlite3.connect(DB_NAME, check_same_thread=False)
   cursor = conn.cursor()
   cursor.execute(
-      "DELETE FROM evaluaciones_periciales WHERE token = %s", (token,)
+      "DELETE FROM evaluaciones_periciales WHERE token = ?", (token,)
   )
   conn.commit()
-  cursor.close()
   conn.close()
+
 
 def obtener_metadatos_conexion():
   try:
@@ -162,15 +145,18 @@ def obtener_metadatos_conexion():
     pass
   return "IP_LOCAL_O_NO_DETECTADA", "Navegador_Estandar"
 
+
 claves_globales = cargar_datos_db()
 
 if "perito_autenticado" not in st.session_state:
   st.session_state["perito_autenticado"] = False
 
+
 def generar_token_unico(longitud=6):
   caracteres = string.ascii_uppercase + string.digits
   codigo = "".join(random.choice(caracteres) for _ in range(longitud))
   return f"EVAL-{codigo}"
+
 
 # -----------------------------------------------------------------------------
 # 2. BANCO COMPLETO DE REACTIVOS DE LAS PRUEBAS
@@ -771,7 +757,7 @@ ITEMS_MMPI2RF = [
         " que me molestan por días."
     ),
     "150. Alguien ha estado intentando robarme.",
-    "151. Le tengo terror los huracanes.",
+    "151. Le tengo terror a los huracanes.",
     "152. Me rindo fácilmente cuando las cosas van mal.",
     (
         "153. Mis preocupaciones parecen desaparecer cuando estoy con un grupo"
@@ -2210,7 +2196,7 @@ if st.session_state["perito_autenticado"]:
     st.markdown("🔗 **Link directo para enviar por WhatsApp o correo:**")
     st.code(link_completo, language="text")
     st.info(
-        "Copie este enlace y enséñeselo al evaluado. Al hacer clic, ingresará"
+        "Copie este enlace y envíatelo al evaluado. Al hacer clic, ingresará"
         " automáticamente."
     )
 
@@ -2857,7 +2843,7 @@ else:
           elif test_seleccionado == "BDI-II (Inventario de Depresión de Beck)":
             st.subheader("BDI-II - Inventario de Depresión de Beck")
             st.info(
-                "Seleccione la frase que mejor describa cómo se ha sentido"
+                "Seleccione la frase que mejor describa cómo se ha sentito"
                 " durante las últimas dos semanas."
             )
             respuestas_bdi = {}
