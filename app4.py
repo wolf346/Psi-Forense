@@ -146,13 +146,22 @@ try:
 
 
 def eliminar_token_db(token):
-  conn = sqlite3.connect(DB_NAME, check_same_thread=False)
-  cursor = conn.cursor()
-  cursor.execute(
-      "DELETE FROM evaluaciones_periciales WHERE token = ?", (token,)
-  )
-  conn.commit()
-  conn.close()
+    """Elimina una evaluación de Google Sheets buscando por su token."""
+    try:
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        cred_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
+        client = gspread.authorize(creds)
+        sheet = client.open("Evaluaciones_Forenses").sheet1
+        
+        cell = sheet.find(token)
+        if cell:
+            sheet.delete_rows(cell.row)
+    except Exception as e:
+        st.error(f"Error al eliminar de Google Sheets: {e}")
 
 
 def obtener_metadatos_conexion():
