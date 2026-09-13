@@ -62,32 +62,36 @@ def guardar_resultado_en_gsheets(datos_lista):
     except Exception as e:
         st.error(f"Error al sincronizar con Google Sheets: {e}")
 def cargar_datos_db():
-  conn = sqlite3.connect(DB_NAME, check_same_thread=False)
-  cursor = conn.cursor()
-  cursor.execute(
-      "SELECT token, estado, datos_persona, evaluaciones, ip_acceso,"
-      " user_agent, hash_bloque FROM evaluaciones_periciales"
-  )
-  rows = cursor.fetchall()
-  conn.close()
-
-  data = {}
-  for row in rows:
-    token, estado, dp, evals, ip, ua, h_bloque = row
-    data[token] = {
-        "estado": estado if estado else "activa",
-        "datos_persona": json.loads(dp) if dp else None,
-        "evaluaciones": json.loads(evals) if evals else {},
-        "ip_acceso": ip,
-        "user_agent": ua,
-        "hash_bloque": h_bloque,
-    }
-  return data
-
-
-def guardar_token_db(token, info_dict):
-  conn = sqlite3.connect(DB_NAME, check_same_thread=False)
-  cursor = conn.cursor()
+    """Carga los registros de evaluaciones directamente desde Google Sheets y los mapea al formato de la app."""
+    try:
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        cred_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
+        
+        client = gspread.authorize(creds)
+        sheet = client.open("Evaluaciones_Forenses").sheet1
+        rows = sheet.get_all_values()
+        
+        data = {}
+        if len(rows) > 1:
+            for row in rows[1:]:
+                if len(row) >= 7:
+                    token, estado, dp, evals, ip, ua, h_bloque = row[0], row[1], row[2], row[3], row[4], row[5], row[6]
+                    data[token] = {
+                        "estado": estado if estado else "activa",
+                        "datos_persona": json.loads(dp) if dp else None,
+                        "evaluaciones": json.loads(evals) if evals else {},
+                        "ip_acceso": ip,
+                        "user_agent": ua,
+                        "hash_bloque": h_bloque,
+                    }
+        return data
+    except Exception as e:
+        st.error(f"Error al cargar datos desde Google Sheets: {e}")
+        return {}
 
   cursor.execute(
       "SELECT hash_bloque FROM evaluaciones_periciales ORDER BY rowid DESC"
