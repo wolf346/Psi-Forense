@@ -134,7 +134,9 @@ try:
         ip = info_dict.get("ip_acceso", "Desconocida")
         ua = info_dict.get("user_agent", "Desconocida")
         
-       # Buscar si el token ya existe para actualizarlo o agregarlo como nueva fila
+        hash_prev = info_dict.get("hash_anterior", "")
+        hash_actual = info_dict.get("hash_bloque", "")
+
         cell = sheet.find(token)
         if cell:
             row_idx = cell.row
@@ -143,7 +145,6 @@ try:
             sheet.append_row([token, estado, dp, evals, ip, ua, hash_prev, hash_actual])
     except Exception as e:
         st.error(f"Error al guardar en Google Sheets: {e}")
-
 
 def eliminar_token_db(token):
     """Elimina una evaluación de Google Sheets buscando por su token."""
