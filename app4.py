@@ -93,17 +93,30 @@ def cargar_datos_db():
         st.error(f"Error al cargar datos desde Google Sheets: {e}")
         return {}
 
-  cursor.execute(
-      "SELECT hash_bloque FROM evaluaciones_periciales ORDER BY rowid DESC"
-      " LIMIT 1"
-  )
-  ultimo = cursor.fetchone()
-  hash_prev = ultimo[0] if ultimo and ultimo[0] else "GENESIS_BLOCK_FORENSE"
+  # Obtener el último hash desde Google Sheets para mantener la cadena de bloques
+    try:
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        cred_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
+        client = gspread.authorize(creds)
+        sheet = client.open("Evaluaciones_Forenses").sheet1
+        rows = sheet.get_all_values()
+        
+        if len(rows) > 1:
+            ultimo_row = rows[-1]
+            hash_prev = ultimo_row[6] if len(ultimo_row) >= 7 else "GENESIS_BLOCK_FORENSE"
+        else:
+            hash_prev = "GENESIS_BLOCK_FORENSE"
+    except Exception:
+        hash_prev = "GENESIS_BLOCK_FORENSE"
 
-  payload_str = (
-      f"{token}-{json.dumps(info_dict.get('evaluaciones'))}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
-  )
-  hash_actual = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
+    payload_str = (
+        f"{token}-{json.dumps(info_dict.get('evaluaciones'))}-{info_dict.get('ip_acceso', '')}-{hash_prev}"
+    )
+    hash_actual = hashlib.sha256(payload_str.encode("utf-8")).hexdigest()
 
   cursor.execute(
       """
