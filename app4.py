@@ -160,7 +160,7 @@ def eliminar_token_db(token):
         cell = sheet.find(token)
         if cell:
             sheet.delete_rows(cell.row)
-    except Exception as e:
+        except Exception as e:
         st.error(f"Error al eliminar de Google Sheets: {e}")
 
 
