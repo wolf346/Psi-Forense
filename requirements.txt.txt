@@ -1,3 +1,2 @@
 streamlit
-supabase
-resend
+psycopg2-binary
