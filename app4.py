@@ -113,6 +113,22 @@ TESTS_DISPONIBLES = [
     "PAI (Inventario de Evaluacion de la Personalidad)",
 ]
 
+CONSENTIMIENTO = """
+### Consentimiento Informado para Evaluacion Psicologica Forense
+
+Por favor lea atentamente antes de continuar:
+
+1. Naturaleza de la evaluacion: Usted participara en una evaluacion psicologica con fines periciales.
+2. Voluntariedad y confidencialidad: Sus datos seran tratados con estricta confidencialidad.
+3. Trazabilidad: El sistema registra fecha, hora e IP de forma anonimizada.
+4. Uso de los resultados: Solo para informe pericial.
+5. Derechos: Puede consultar o rectificar sus datos.
+
+Al marcar la casilla declara que ha leido y acepta participar.
+"""
+
+
+
 
 ITEMS_LSB50 = [
     "1. Mi corazón palpita o va muy deprisa.",
@@ -1637,7 +1653,7 @@ else:
             dni = c4.text_input("DNI*")
             localidad = c5.text_input("Localidad donde vivís*")
             st.divider()
-            st.markdown(CONSENTIMIENTO_TEXTO)
+            st.markdown(CONSENTIMIENTO)
             consent = st.checkbox("✅ He leído y acepto el Consentimiento Informado*")
             if st.form_submit_button("Aceptar y Continuar a los Tests", type="primary", use_container_width=True):
                 if not (nombre and apellido and dni and localidad and edad and consent):
