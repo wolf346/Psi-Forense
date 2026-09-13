@@ -2,7 +2,7 @@ import hashlib
 import json
 import random
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
+import gspread
 import string
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
