@@ -1679,14 +1679,52 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
 
                     if evals:
                         st.write("---")
+                        st.write("#### 📊 Respuestas con preguntas y puntaje:")
                         for test_nombre, respuestas_dict in evals.items():
-                            st.markdown(f"**{test_nombre}:** {len(respuestas_dict)} respuestas")
-                            # Tabla resumida
+                            st.markdown(f"### {test_nombre}: {len(respuestas_dict)} respuestas")
                             try:
                                 import pandas as pd
-                                df_r = pd.DataFrame(list(respuestas_dict.items()), columns=["Pregunta","Respuesta"])
+                                tabla=[]
+                                for p_key, resp_val in respuestas_dict.items():
+                                    try:
+                                        num = int(p_key.split("_")[1]) - 1
+                                    except:
+                                        num = 0
+                                    # Obtener texto pregunta según test
+                                    pregunta_texto = p_key
+                                    puntaje_texto = str(resp_val)
+                                    try:
+                                        if "LSB-50" in test_nombre and num < len(ITEMS_LSB50):
+                                            pregunta_texto = ITEMS_LSB50[num]
+                                            # resp_val es 0-4
+                                            etiqueta = OPCIONES_LSB50.get(str(resp_val), OPCIONES_LSB50.get(resp_val, str(resp_val)))
+                                            puntaje_texto = f"{resp_val} - {etiqueta}"
+                                        elif "MCMI-III" in test_nombre and num < len(ITEMS_MCMIIII):
+                                            pregunta_texto = ITEMS_MCMIIII[num]
+                                            puntaje_texto = str(resp_val)
+                                        elif "CUIDA" in test_nombre and num < len(ITEMS_CUIDA):
+                                            pregunta_texto = ITEMS_CUIDA[num]
+                                            etiqueta = OPCIONES_CUIDA.get(str(resp_val), OPCIONES_CUIDA.get(resp_val, str(resp_val)))
+                                            puntaje_texto = f"{resp_val} - {etiqueta}"
+                                        elif "STAI" in test_nombre and num < len(ITEMS_STAI):
+                                            pregunta_texto = ITEMS_STAI[num]
+                                            etiqueta = OPCIONES_STAI.get(str(resp_val), OPCIONES_STAI.get(resp_val, str(resp_val)))
+                                            puntaje_texto = f"{resp_val} - {etiqueta}"
+                                        elif "BDI-II" in test_nombre and num < len(ITEMS_BDI):
+                                            item_bdi = ITEMS_BDI[num] if num < len(ITEMS_BDI) else {}
+                                            pregunta_texto = item_bdi.get('titulo', f"Ítem {num+1}")
+                                            puntaje_texto = str(resp_val)
+                                        elif "PAI" in test_nombre and num < len(ITEMS_PAI):
+                                            pregunta_texto = ITEMS_PAI[num]
+                                            etiqueta = OPCIONES_PAI.get(str(resp_val), OPCIONES_PAI.get(resp_val, str(resp_val)))
+                                            puntaje_texto = f"{resp_val} - {etiqueta}"
+                                    except:
+                                        pass
+                                    tabla.append({"Nº": num+1, "Pregunta": pregunta_texto, "Respuesta / Puntaje": puntaje_texto})
+                                df_r = pd.DataFrame(tabla)
                                 st.dataframe(df_r, hide_index=True, use_container_width=True)
-                            except:
+                            except Exception as e:
+                                st.error(f"Error mostrando: {e}")
                                 st.json(respuestas_dict)
 
                 st.divider()
@@ -1696,12 +1734,34 @@ else:
     st.title("Evaluación Psicológica Forense")
     query_params = st.query_params
     token_url = query_params.get("token", None)
-    token_input = st.text_input("Ingresá tu TOKEN", value=token_url if token_url else "", placeholder="EVAL-XXXXXX")
-    if token_input:
+    
+    # Desactivar autocompletado del navegador
+    st.markdown("""
+    <style>
+    input { autocomplete: off !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    c_tok, c_btn = st.columns([4,1])
+    with c_tok:
+        token_input = st.text_input("Ingresá tu TOKEN", value=token_url if token_url else "", placeholder="EVAL-XXXXXX", key="input_token_eval", autocomplete="off")
+    with c_btn:
+        st.write("")
+        st.write("")
+        btn_entrar = st.button("Entrar", type="primary", use_container_width=True)
+    
+    if btn_entrar and token_input:
         st.session_state["token_actual"] = token_input.strip().upper()
-    token_actual = st.session_state["token_actual"]
+    elif token_url and not st.session_state.get("token_actual"):
+        st.session_state["token_actual"] = token_url.strip().upper()
+    elif token_input and not btn_entrar:
+        # Si viene por link, también lo toma
+        if token_url:
+            st.session_state["token_actual"] = token_input.strip().upper()
+
+    token_actual = st.session_state.get("token_actual")
     if not token_actual:
-        st.info("Pedile a tu perito el código de protocolo.")
+        st.info("Pedile a tu perito el código de protocolo y apretá Entrar.")
         st.stop()
     datos_db = cargar_datos_db()
     if token_actual not in datos_db:
@@ -1716,12 +1776,12 @@ else:
         st.subheader("Paso 1: Completá tus datos personales")
         with st.form("form_datos_personales"):
             c1, c2 = st.columns(2)
-            nombre = c1.text_input("Nombre*")
-            apellido = c2.text_input("Apellido*")
+            nombre = c1.text_input("Nombre*", autocomplete="off", key="nombre_eval")
+            apellido = c2.text_input("Apellido*", autocomplete="off", key="apellido_eval")
             c3, c4, c5 = st.columns(3)
             edad = c3.number_input("Edad*", min_value=6, max_value=100, value=18)
-            dni = c4.text_input("DNI*")
-            localidad = c5.text_input("Localidad donde vivís*")
+            dni = c4.text_input("DNI*", autocomplete="off", key="dni_eval")
+            localidad = c5.text_input("Localidad donde vivís*", autocomplete="off", key="loc_eval")
             st.divider()
             st.markdown("""
             ### Consentimiento Informado
