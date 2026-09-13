@@ -1,2 +1,3 @@
+streamlit[sql]
 sqlalchemy
 psycopg2-binary
