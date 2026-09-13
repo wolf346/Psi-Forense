@@ -1589,7 +1589,7 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
         base_url = "https://psi-forense-knto5bo9aobIpy73lw34o6.streamlit.app"
         link_completo = f"{base_url}/?token={nuevo_token}"
         st.code(link_completo, language="text")
-        st.info("Copiá este link y envialo al evaluado por WhatsApp. Al hacer clic ingresa automático.")
+        st.info("Copiá este link y envialo por WhatsApp. Vos podés quedarte como Perito logueado y probar el link en otra pestaña de incógnito - no necesitás cerrar sesión de perito. El evaluado puede hacer los 6 tests seguidos con el mismo código sin salir.")
 
     st.divider()
     st.subheader("📋 Estado de Claves y Evaluaciones - Código de Protocolo")
@@ -1732,47 +1732,80 @@ if rol == "🧑‍⚖️ Soy Perito (Admin)":
 else:
     # EVALUADO
     st.title("Evaluación Psicológica Forense")
+
     query_params = st.query_params
     token_url = query_params.get("token", None)
     
-    # Desactivar autocompletado del navegador
+    # Anti-autocompletado ultra agresivo - inyecta en head
     st.markdown("""
     <style>
-    input { autocomplete: off !important; }
+    /* Oculta el icono de autocompletado de Chrome */
+    input::-webkit-contacts-auto-fill-button { visibility: hidden; display: none !important; }
+    input::-webkit-credentials-auto-fill-button { visibility: hidden; display: none !important; }
     </style>
     <script>
-    // Desactivar autocompletado agresivo
-    setTimeout(() => {
-        document.querySelectorAll("input").forEach(i => {
-            i.setAttribute("autocomplete","new-password");
-            i.setAttribute("autocorrect","off");
-            i.setAttribute("spellcheck","false");
+    function disableAuto(){
+        document.querySelectorAll('input').forEach(inp=>{
+            inp.setAttribute('autocomplete','off');
+            inp.setAttribute('autocorrect','off');
+            inp.setAttribute('spellcheck','false');
+            inp.setAttribute('autocapitalize','off');
+            // Nombre aleatorio para romper historial
+            if(inp.placeholder && inp.placeholder.includes('EVAL')){
+                inp.setAttribute('name','token_' + Math.random().toString(36).substring(7));
+                inp.setAttribute('id','token_' + Math.random().toString(36).substring(7));
+            }
         });
-    }, 500);
+        document.querySelectorAll('form').forEach(f=>f.setAttribute('autocomplete','off'));
+    }
+    setTimeout(disableAuto, 100);
+    setTimeout(disableAuto, 500);
+    setTimeout(disableAuto, 1500);
+    setInterval(disableAuto, 2000);
     </script>
     """, unsafe_allow_html=True)
 
+    # Inicializar control de cambio de token
+    if "ultimo_token_visto" not in st.session_state:
+        st.session_state["ultimo_token_visto"] = None
+
     c_tok, c_btn = st.columns([4,1])
     with c_tok:
-        token_input = st.text_input("Ingresá tu TOKEN", value=token_url if token_url else "", placeholder="EVAL-XXXXXX", key="input_token_eval", autocomplete="new-password")
+        # Key con random para romper cache del navegador
+        import random, string
+        random_suffix = ''.join(random.choices(string.ascii_lowercase, k=5))
+        token_input = st.text_input("Ingresá tu TOKEN", value=token_url if token_url else "", placeholder="EVAL-XXXXXX", key=f"input_token_eval_{random_suffix}", autocomplete="off")
     with c_btn:
         st.write("")
         st.write("")
-        btn_entrar = st.button("Entrar", type="primary", use_container_width=True)
+        btn_entrar = st.button("Entrar", type="primary", use_container_width=True, key="btn_entrar_token")
     
+    # Detectar cambio de token
+    token_a_usar = None
     if btn_entrar and token_input:
-        st.session_state["token_actual"] = token_input.strip().upper()
-    elif token_url and not st.session_state.get("token_actual"):
-        st.session_state["token_actual"] = token_url.strip().upper()
-    elif token_input and not btn_entrar:
-        # Si viene por link, también lo toma
-        if token_url:
-            st.session_state["token_actual"] = token_input.strip().upper()
+        token_a_usar = token_input.strip().upper()
+    elif token_url:
+        token_a_usar = token_url.strip().upper()
+    
+    if token_a_usar:
+        # Si cambió el token, resetear todo el flujo
+        if st.session_state["ultimo_token_visto"] != token_a_usar:
+            st.session_state["token_actual"] = token_a_usar
+            st.session_state["ultimo_token_visto"] = token_a_usar
+            st.session_state["test_enviado"] = False
+            st.session_state["datos_personales_ok"] = False
+            # Limpiar modales
+            keys_to_del = [k for k in st.session_state.keys() if k.startswith("modal_ver_")]
+            for k in keys_to_del:
+                del st.session_state[k]
+        else:
+            st.session_state["token_actual"] = token_a_usar
 
     token_actual = st.session_state.get("token_actual")
     if not token_actual:
         st.info("Pedile a tu perito el código de protocolo y apretá Entrar.")
         st.stop()
+
     datos_db = cargar_datos_db()
     if token_actual not in datos_db:
         st.error(f"Código {token_actual} no existe")
