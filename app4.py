@@ -34,28 +34,33 @@ CONTRASEÑA_MAESTRA = "MiClavePericial2026"
 DB_NAME = "forense_seguro.db"
 
 
+import gspread
+from google.oauth2.service_account import Credentials
+
 def init_db():
-  conn = sqlite3.connect(DB_NAME, check_same_thread=False)
-  cursor = conn.cursor()
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS evaluaciones_periciales (
-            token TEXT PRIMARY KEY,
-            estado TEXT,
-            datos_persona TEXT,
-            evaluaciones TEXT,
-            ip_acceso TEXT,
-            user_agent TEXT,
-            hash_anterior TEXT,
-            hash_bloque TEXT
-        )
-    """)
-  conn.commit()
-  conn.close()
+    # Función de compatibilidad: con Google Sheets no requerimos inicializar bases de datos locales.
+    pass
 
-
-init_db()
-
-
+def guardar_resultado_en_gsheets(datos_lista):
+    """Inserta los resultados de la evaluación directamente en Google Sheets."""
+    try:
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        
+        # Carga las credenciales desde los secretos de Streamlit Cloud
+        cred_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(cred_dict, scopes=scopes)
+        
+        # Conexión y guardado
+        client = gspread.authorize(creds)
+        
+        # IMPORTANTE: Reemplaza "Evaluaciones_Forenses" por el nombre exacto de tu Google Sheet en Drive
+        sheet = client.open("Evaluaciones_Forenses").sheet1
+        sheet.append_row(datos_lista)
+    except Exception as e:
+        st.error(f"Error al sincronizar con Google Sheets: {e}")
 def cargar_datos_db():
   conn = sqlite3.connect(DB_NAME, check_same_thread=False)
   cursor = conn.cursor()
